@@ -84,11 +84,7 @@ function newPlayer(x, y, fadein)
 			self.speedy = -160
 			self.jumping = true
 
-			if not paused then
-				if self.fade == 1 then
-					jumpsnd:play()
-				end
-			end
+			jumpsnd:play()
 		else
 			if shortHop then
 				self.speedy = -120
@@ -153,7 +149,7 @@ function newPlayer(x, y, fadein)
 		end
 
 		if name == "tile" then
-			if self.speedx < 0 then
+			if love.keyboard.isDown("a") then
 				self.speedy = -60
 			end
 		end
@@ -177,7 +173,7 @@ function newPlayer(x, y, fadein)
 		end
 
 		if name == "tile" then
-			if self.speedx > 0 then
+			if love.keyboard.isDown("d") then
 				self.speedy = -60
 			end
 		end

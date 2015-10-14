@@ -1,0 +1,13 @@
+Ideas
+•	Scan lines shader?
+•	Dash with left shift
+•	After clearing a room, a random direction opens (left, right, or down)
+•	More enemy types
+•	Mini boss midway through the game (see top of main.lua for mid bosses)
+•	14 rooms
+•	To destroy enemies use left mouse to shoot
+
+•	Have Polybius sprite his OC for the player sprite
+•	4 directional angles
+•	Needed animations: | idle | walk | run | jump | fall | wall cling | duck |
+•	angles: 0, pi/4, pi/2, 7pi/4

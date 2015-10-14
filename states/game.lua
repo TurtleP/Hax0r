@@ -5,7 +5,7 @@ function game_init()
 
 	backgroundLines = {}
 	for k = 1, 16 do
-		backgroundLines[k] = newBackgroundLine(backgroundLines, k)
+		backgroundLines[k] = newBackgroundLine()
 	end
 
 	gameover = false
@@ -16,16 +16,11 @@ function game_init()
 	scoreTypes = {"KB", "MB", "GB"}
 	scorei = 1
 
-	events = { ["proxy"] = false, ["scan"] = {false, false, false}, ["udpopen"] = {false, false} , ["firewall"] = false, ["win"] = false }
+	events = { ["proxy"] = false, ["scan"] = {false, false, false}, ["udpopen"] = {false, false} , ["firewall"] = false, ["win"] = true }
 
 	combo = 0
 	combotimeout = 0
 	paused = false
-
-	bgm_start:play()
-	bgm:stop()
-
-	pauseMenu = newPauseMenu()
 end
 
 function game_update(dt)
@@ -97,7 +92,11 @@ function game_update(dt)
 	end
 
 	for k, v in pairs(backgroundLines) do
-		v:update(dt)
+		v.y = v.y + v.speed * dt
+		
+		if v.y > gameFunctions.getHeight() then
+			backgroundLines[k] = newBackgroundLine()
+		end
 	end
 
 	if background[currentPos].fadeOut then
@@ -160,7 +159,7 @@ function game_update(dt)
 
 			timers["bits"][1] = newRepeatTimer(1.5, function()
 				if #objects["bit"] < 12 and #objects["proxy"] == 0 then
-					table.insert(objects["bit"], newBit(love.math.random(3 * 16, 14 * 16), love.math.random(3 * 16, 8 * 16)))
+					table.insert(objects["bit"], newBit(love.math.random(2 * 16, 15 * 16), love.math.random(2 * 16, 9 * 16)))
 				end
 			end)
 			events["udpopen"][3] = true
@@ -243,7 +242,8 @@ function game_draw()
 	end
 
 	for k, v in pairs(backgroundLines) do
-		v:draw()
+		love.graphics.setColor(v.colors)
+		love.graphics.rectangle("fill", v.x * scale, v.y * scale, v.width * scale, v.height * scale)
 	end
 
 	love.graphics.setColor(255, 255, 255, 255)
@@ -267,17 +267,17 @@ function game_draw()
 
 	love.graphics.setColor(0, 0, 0, 255)
 
-	love.graphics.print("Data: " .. score .. scoreTypes[scorei] .. " / " .. "1MB", 4 * scale, gameFunctions.getHeight() * scale - backgroundFont:getHeight("Data: " .. score))
+	love.graphics.print("Score: " .. score .. scoreTypes[scorei] .. " / " .. "1MB", 4 * scale, gameFunctions.getHeight() * scale - backgroundFont:getHeight("Score: " .. score))
 
 	love.graphics.setColor(255, 255, 255, 255)
 	if gameover then
 		love.graphics.draw(gameoverimg, gameFunctions.getWidth() / 2 * scale - (38 / 2) * scale, gameFunctions.getHeight() / 2 * scale - (58 / 2) * scale + math.sin(gameoversin) * 20, 0, scale, scale)
 
-		love.graphics.print("Press '" .. controls["pause"] .. "' to retry.", gameFunctions.getWidth() / 2 * scale - backgroundFont:getWidth("Press '" .. controls["pause"] .. "' to retry.") / 2, gameFunctions.getHeight() / 2 * scale - backgroundFont:getWidth("Press '" .. controls["pause"] .. "' to retry.") / 2 + 100 * scale  + math.sin(gameoversin) * 20)
+		love.graphics.print("Press 'R' to retry.", gameFunctions.getWidth() / 2 * scale - backgroundFont:getWidth("Press 'R' to retry") / 2, gameFunctions.getHeight() / 2 * scale - backgroundFont:getWidth("Press 'R' to retry") / 2 + 100 * scale  + math.sin(gameoversin) * 20)
 	end
 
 	if paused and not gameover then
-		pauseMenu:draw()
+		love.graphics.print("Game Paused", gameFunctions.getWidth() / 2 * scale - backgroundFont:getWidth("Game Paused") / 2, gameFunctions.getHeight() / 2 * scale - backgroundFont:getHeight("Game Paused") / 2)
 	end
 end
 
@@ -296,27 +296,23 @@ function nextMap()
 end
 
 function game_keypressed(key)
-	if key == controls["pause"] then
-		if not gameover then
-			paused = not paused
-		else
-			gameFunctions.changeState("game")
-		end
-	end
-
-	if paused then
-		pauseMenu:keypressed(key)
+	if key == "escape" then
+		paused = not paused
 	end
 
 	if not objects["player"][1] then
+		if key == "r" and gameover then
+			gameFunctions.changeState("game")
+		end
+
 		return
 	end
 
-	if key == controls["left"] then
+	if key == "a" then
 		objects["player"][1]:moveleft(true)
-	elseif key == controls["right"] then
+	elseif key == "d" then
 		objects["player"][1]:moveright(true)
-	elseif key == controls["jump"] then
+	elseif key == " " then
 		objects["player"][1]:jump()
 	end
 end
@@ -326,9 +322,9 @@ function game_keyreleased(key)
 		return
 	end
 
-	if key == controls["left"] then
+	if key == "a" then
 		objects["player"][1]:moveleft(false)
-	elseif key == controls["right"] then
+	elseif key == "d" then
 		objects["player"][1]:moveright(false)
 	end
 end
@@ -389,7 +385,7 @@ function loadMap(map)
 	consoleDelay(14, "Streaming bits/s: 3", {255, 255, 255}, function()
 		table.insert(timers["bits"], newRepeatTimer(3, function()
 			if #objects["bit"] < 6 and #objects["proxy"] == 0 then
-				table.insert(objects["bit"], newBit(love.math.random(3 * 16, 14 * 16), love.math.random(3 * 16, 8 * 16)))
+				table.insert(objects["bit"], newBit(love.math.random(3 * 16, 15 * 16), love.math.random(2 * 16, 9 * 16)))
 			end
 		end))
 	end)
@@ -450,12 +446,15 @@ function newRepeatTimer(t, f)
 	return timerthing
 end
 
-function newBackgroundLine()
+function newBackgroundLine(dir)
+	local x = love.math.random(4, gameFunctions.getWidth() - 8)
 	local y = 0
+
+	local r, g, b, a = love.math.random(120, 255), love.math.random(120, 255), love.math.random(120, 255), 100
 
 	local line = {}
 
-	line.x = love.math.random(4, gameFunctions.getWidth() - 8)
+	line.x = x
 	line.y = y
 	line.initX = x
 	line.initY = y
@@ -465,30 +464,7 @@ function newBackgroundLine()
 	line.width = love.math.random(4, 8)
 	line.height = love.math.random(30, 40)
 
-	line.colors = {love.math.random(120, 255), love.math.random(120, 255), love.math.random(120, 255), 100}
-
-	function line:draw()
-		love.graphics.setColor(self.colors)
-		love.graphics.rectangle("fill", self.x * scale, self.y * scale, self.width * scale, self.height * scale)
-	end
-
-	function line:update(dt)
-		self.y = self.y + self.speed * dt
-		
-		if self.y > gameFunctions.getHeight() then
-			self.x = self:newX()
-			self.y = 0
-			self.colors = self:newColors() --seems legal
-		end
-	end
-
-	function line:newX()
-		return love.math.random(4, gameFunctions.getWidth() - 8)
-	end
-
-	function line:newColors()
-		return {love.math.random(120, 255), love.math.random(120, 255), love.math.random(120, 255), 100}
-	end
+	line.colors = {r, g, b, a}
 
 	return line
 end

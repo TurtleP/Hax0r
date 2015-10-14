@@ -26,8 +26,6 @@ function newBit(x, y)
 
 	bit.active = true
 
-	bit.color = {love.math.random(180, 255), love.math.random(180, 255), love.math.random(180, 255), love.math.random(180, 255)}
-
 	function bit:update(dt)
 		if self.aiTimer < self.aiTimerMax then
 			self.aiTimer = self.aiTimer + dt
@@ -97,9 +95,8 @@ function newBit(x, y)
 	end
 
 	function bit:draw()
-		love.graphics.setColor(self.color)
-		love.graphics.rectangle("fill", self.x * scale, self.y * scale, self.width * scale, self.height * scale)
 		love.graphics.setColor(255, 255, 255)
+		love.graphics.rectangle("fill", self.x * scale, self.y * scale, self.width * scale, self.height * scale)
 	end
 
 	function bit:die(ply)

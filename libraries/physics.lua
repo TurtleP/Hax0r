@@ -226,3 +226,8 @@ function aabb(v1x, v1y, v1width, v1height, v2x, v2y, v2width, v2height)
 	local v1farx, v1fary, v2farx, v2fary = v1x + v1width, v1y + v1height, v2x + v2width, v2y + v2height
 	return v1farx > v2x and v1x < v2farx and v1fary > v2y and v1y < v2fary
 end
+
+function CheckCollision(ax1, ay1, aw, ah, bx1, by1, bw, bh)
+	local ax2, ay2, bx2, by2 = ax1*scale + aw*scale, ay1*scale + ah*scale, bx1*scale + bw*scale, by1*scale + bh*scale
+	return ax1*scale < bx2 and ax2 > bx1*scale and ay1*scale < by2 and ay2 > by1*scale
+end
