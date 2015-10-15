@@ -59,15 +59,22 @@ end
 
 credits = 
 {
-	"CREDITS :: HAX0R?",
+	":: Hax0r Credits ::",
 	"",
 	"A GAME MADE FOR LUDUM DARE #33",
 	"",
 	"Game and code by Jeremy S. Postelnek",
+	"",
 	"Music made with PixiTracker",
+	"",
 	"Art made with Paint.NET",
+	"",
 	"Sounds made with BFXR",
+	"",
 	"Font used is Windows CMD",
+	"",
+	"This version has been polished",
+	"since initial release.",
 	"",
 	"Check out my blog for other games:",
 	"http://www.jpostelnek.blogspot.com/"

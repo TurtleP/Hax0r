@@ -1,181 +1,122 @@
 function title_init()
-	introtimer = 0
-	titleRects = {}
-
-	for k = 1, 20 do
-		titleRects[k] = newBackgroundLine()
-	end
-
-	titleThings = 
+	titleUI =
 	{
-		{"New user session", function() title_runCMD("game") end},
-		{"Toggle fullscreen", function() title_runCMD("fullscreen") end},
-		{"View credits", function() title_runCMD("credits") end},
-		{"Exit terminal", function() title_runCMD("quit") end}
+		newButton(gameFunctions.getWidth() / 2 - 82, 70, "New user session", function() gameFunctions.changeState("game") end),
+		newButton(gameFunctions.getWidth() / 2 - 82, 112, "View credits", function() gameFunctions.changeState("credits") end),
+		newButton(gameFunctions.getWidth() / 2 - 82, 154, "Exit terminal", function() love.event.quit() end)
 	}
 
-	menui = 1
-
-	titlestringi = 0
-	titlestringrep = 0
-	lastrep = 0
-
-	gameTitle = "HAX0R?"
-	gameName = "HAX0R?"
-
-	cmdtimer = 0
-	titlecmd = ""
-	titledrawstring = ""
-	cmdi = 0
-	realcmd = ""
-
-	cmdendtimer = 0
-	runcmdfade = 1
-
-	if mobileMode then
-		table.remove(titleThings, 2)
+	for k, v in ipairs(titleUI) do
+		v:centerX()
 	end
-end
 
-function replace_char(pos, str, r)
-    return str:sub(1, pos-1) .. r .. str:sub(pos+1)
+	titleNums = 
+	{
+		["top"] = {},
+		["bottom"] = {}
+	}
+
+	makeTitleNums()
 end
 
 function title_update(dt)
-	if introtimer < 0.6 then
-		introtimer = introtimer + dt
-		if introtimer < 1/60 then
-			blipsnd:play()
-		end
-	else
-		for k, v in pairs(titleRects) do
-			v:update(dt)
-		end
+	for k, j in pairs(titleNums) do
+		for i, v in ipairs(j) do
+			v[3] = v[3] + v[4] * dt
 
-		if titlemusic:isStopped() then
-			titlemusic:play()
-		end
-
-		if titlestringrep < 10/60 then
-			titlestringrep = titlestringrep + dt
-		else
-			if lastrep ~= 0 then
-				gameTitle = replace_char(lastrep, gameName, gameName:sub(lastrep, lastrep))
-			end
-			titlestringi = love.math.random(#gameMap)
-			lastrep = titlestringi
-			gameTitle = replace_char(lastrep, gameTitle, gameMap[lastrep])
-			titlestringrep = 0
-		end
-	end
-
-	if #titlecmd > 0 then
-		if #titledrawstring < #titlecmd then
-			if cmdtimer < 0.03 then
-				cmdtimer = cmdtimer + dt
-			else
-				cmdi = cmdi + 1
-				titledrawstring = titledrawstring .. titlecmd:sub(cmdi, cmdi)
-				cmdtimer = 0
-			end
-		else
-			if realcmd then
-				cmdendtimer = cmdendtimer + dt
-				runcmdfade = cmdendtimer%2
-
-				if cmdendtimer > 2 then
-					if realcmd == "quit" then
-						love.event.quit()
-					elseif realcmd == "game" then
-						gameFunctions.changeState("game")
-						titlemusic:stop()
-					elseif realcmd == "fullscreen" then
-						fullscreen = not fullscreen
-						gameFunctions.fullScreen()
-					elseif realcmd == "credits" then
-						showCredits = true
-					end
-
-					titledrawstring = ""
-					titlecmd = ""
-					realcmd = ""
-					cmdi = 0
-					cmdtimer = 0
-					cmdendtimer = 0
-				end
+			if v[3] * 16 > gameFunctions.getHeight() then
+				v[3] = 0
 			end
 		end
 	end
 end
 
 function title_draw()
-	if introtimer < 1/60 then
-		love.graphics.rectangle("fill", 0, (gameFunctions.getHeight() / 2) * scale - 1 * scale, gameFunctions.getWidth() * scale, 2 * scale)
-	elseif introtimer > 1/60 and introtimer < 0.1 then
-		love.graphics.rectangle("fill", 0, 0, gameFunctions.getWidth() * scale, gameFunctions.getHeight() * scale)
-	elseif introtimer > 0.4 then
-		for k, v in pairs(titleRects) do
-			v:draw()
+	love.graphics.setScreen("top")
+
+	love.graphics.setColor(255, 255, 255)
+	love.graphics.draw(titleimg, gameFunctions.getWidth() / 2 - 76, gameFunctions.getHeight() / 2 - 18)
+
+	love.graphics.setFont(backgroundFont)
+	for k, v in ipairs(titleNums["top"]) do
+		love.graphics.setScreen("top")
+		love.graphics.setColor(0, 128, 0)
+		love.graphics.print(v[1], 5 + (v[2] - 1) * 16, 1 + (v[3] - 1) * 16)
+	end
+
+	for k, v in ipairs(titleNums["bottom"]) do
+		love.graphics.setScreen("bottom")
+		love.graphics.setColor(0, 128, 0)
+		love.graphics.print(v[1], 5 + (v[2] - 1) * 16, 1 + (v[3] - 1) * 16)
+	end
+
+	love.graphics.setScreen("bottom")
+
+	for k, v in ipairs(titleUI) do
+		v:draw()
+	end
+end
+
+function title_mousepressed(x, y, button)
+	for k, v in pairs(titleUI) do
+		v:doClick(x, y, button)
+	end
+end
+
+function makeTitleNums()
+	local ops = {"0", "1"}
+
+	for y = 1, 15 do
+		for x = 1, 25 do
+			table.insert(titleNums["top"], {ops[math.random(1, 2)], x, y, math.random(60)})
 		end
+	end
 
-		if not showCredits then
-			love.graphics.setColor(255, 255, 255)
-			love.graphics.setFont(mainFont)
-			love.graphics.print(gameTitle, (gameFunctions.getWidth() / 2) * scale - mainFont:getWidth(gameTitle) / 2,  40 * scale)
-
-			love.graphics.setFont(backgroundFont)
-
-			local offset
-			for k = 1, #titleThings do
-				if menui == k then
-					offset = backgroundFont:getWidth("> ")
-				else
-					offset = 0
-				end
-				love.graphics.print(titleThings[k][1], 1 * scale + offset, (120 + (k - 1) * 14) * scale)
-			end
-
-			love.graphics.print("> ", 1 * scale, (120 + (menui - 1) * 14) * scale)
-
-			if #titledrawstring > 0 then
-				love.graphics.print(titledrawstring, 1 * scale, gameFunctions.getHeight() * scale - backgroundFont:getHeight("~$" .. titledrawstring))
-
-				love.graphics.setColor(255, 255, 255, 255 * runcmdfade)
-				love.graphics.print("_", 1 * scale + backgroundFont:getWidth(titledrawstring), gameFunctions.getHeight() * scale - backgroundFont:getHeight("_"))
-			end
-		end
-
-		if showCredits then
-			for k = 1, #credits do
-				love.graphics.print(credits[k], (gameFunctions.getWidth() / 2) * scale - backgroundFont:getWidth(credits[k]) / 2, (12 + (k - 1) * 14) * scale) 
-			end
+	for y = 1, 15 do
+		for x = 1, 20 do
+			table.insert(titleNums["bottom"], {ops[math.random(1, 2)], x, y, math.random(60)})
 		end
 	end
 end
 
-function title_keypressed(key)
-	if key == controls["down"] then
-		menui = math.min(menui + 1, #titleThings)
+function newButton(x, y, text, func)
+	local button = {}
+
+	button.x = x
+	button.y = y
+	button.width = buttonFont:getWidth(text) + 8
+	button.height = buttonFont:getHeight(text) + 8
+	button.text = text
+	button.func = func
+
+	function button:draw()
+		love.graphics.setFont(buttonFont)
+
+		love.graphics.setColor(255, 255, 255, 235)
+		love.graphics.rectangle("line", self.x, self.y, self.width, self.height)
+
+		love.graphics.setColor(54, 54, 54, 235)
+		love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
+
+		love.graphics.setColor(255, 255, 255)
+		love.graphics.print(self.text, self.x + (self.width / 2) - buttonFont:getWidth(self.text) / 2, self.y + (self.height / 2) - buttonFont:getHeight(self.text) / 2)
 	end
 
-	if key == controls["up"] then
-		menui = math.max(menui - 1, 1)
+	function button:centerX()
+		self.x = gameFunctions.getWidth() / 2 - self.width / 2
 	end
 
-	if key == controls["jump"] then
-		if not showCredits then
-			titleThings[menui][2]()
-		else
-			showCredits = false
+	function button:inside(x, y)
+		return (x > self.x) and (x < self.x + self.width) and (y > self.y) and (y < self.y + self.height)
+	end
+
+	function button:doClick(x, y, button)
+		if self:inside(x, y) then
+			if button == "l" then
+				self.func()
+			end
 		end
 	end
 
-	if key == controls["pause"] then
-		love.event.quit()
-	end
-end
-
-function title_runCMD(s)
-	titlecmd = "~$run " .. s
-	realcmd = s
+	return button
 end

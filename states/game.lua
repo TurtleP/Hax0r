@@ -1,11 +1,13 @@
 function game_init()
+	eventSystem = eventsystem:new()
+
 	loadMap(1)
 
 	score = 0
 
 	backgroundLines = {}
 	for k = 1, 16 do
-		backgroundLines[k] = newBackgroundLine()
+		backgroundLines[k] = newBackgroundLine(backgroundLines, k)
 	end
 
 	gameover = false
@@ -16,17 +18,22 @@ function game_init()
 	scoreTypes = {"KB", "MB", "GB"}
 	scorei = 1
 
-	events = { ["proxy"] = false, ["scan"] = {false, false, false}, ["udpopen"] = {false, false} , ["firewall"] = false, ["win"] = true }
-
 	combo = 0
 	combotimeout = 0
 	paused = false
+
+	bgm_start:play()
+	bgm:stop()
+
+	pauseMenu = newPauseMenu()
 end
 
 function game_update(dt)
 	if paused then
 		return
 	end
+
+	eventSystem:update(dt)
 
 	for k, v in pairs(objects) do
 		for j, w in pairs(v) do
@@ -92,11 +99,7 @@ function game_update(dt)
 	end
 
 	for k, v in pairs(backgroundLines) do
-		v.y = v.y + v.speed * dt
-		
-		if v.y > gameFunctions.getHeight() then
-			backgroundLines[k] = newBackgroundLine()
-		end
+		v:update(dt)
 	end
 
 	if background[currentPos].fadeOut then
@@ -122,114 +125,6 @@ function game_update(dt)
 		end
 	end
 
-	--events?
-	if not events["proxy"] then
-		if score > 20 then
-			consoleDelay(1, "Proxies detected in traffic. Data flow may be interrupted.", {255, 35, 0})
-			table.insert(timers["events"], newRepeatTimer(10, function()
-				local s = love.math.random(100)
-
-				if s < 20 then
-					table.insert(objects["proxy"], newProxy(love.math.random(2 * 16, 14 * 16), love.math.random(3 * 16, 6 * 16)))
-				end
-			end))
-			events["proxy"] = true
-		end
-	end
-
-	if not events["udpopen"][1] then
-		if score > 40 then
-			consoleDelay(0.3, "Running bin/UDPCrack.sh (4%)")
-			events["udpopen"][1] = true
-		end
-	end
-
-	if not events["udpopen"][2] then
-		if score > 65 then
-			consoleDelay(0.3, "Running bin/UDPCrack.sh (60%)")
-			consoleDelay(6, "Infected machine is doing a virus scan! (5%)", {255, 35, 0})
-			events["udpopen"][2] = true
-		end
-	end
-
-	if not events["udpopen"][3] then
-		if score > 160 then
-			consoleDelay(0.3, "UDPCrack.sh has unloaded port #XX on machine.")
-			consoleDelay(6, "Dataflow will now increase.")
-
-			timers["bits"][1] = newRepeatTimer(1.5, function()
-				if #objects["bit"] < 12 and #objects["proxy"] == 0 then
-					table.insert(objects["bit"], newBit(love.math.random(2 * 16, 15 * 16), love.math.random(2 * 16, 9 * 16)))
-				end
-			end)
-			events["udpopen"][3] = true
-		end
-	end
-
-	if not events["scan"][1] then
-		if score > 105 then
-			consoleDelay(0.3, "Infected machine is doing a virus scan! (83%)", {255, 35, 0})
-			events["scan"][1] = true
-		end
-	end
-
-	if not events["scan"][2] then
-		if score > 130 then
-			consoleDelay(1, "Infected machine's antivirus has found you!", {255, 35, 0}, function()
-				table.insert(timers["av"], newRepeatTimer(5, function()
-					table.insert(objects["antivirus"], newAntivirus(love.math.random(2 * 16, 15 * 16), love.math.random(2 * 16, 3 * 16)))
-				end))
-			end)
-			events["scan"][2] = true
-		end
-	end
-
-	if not events["firewall"] then
-		if score > 280 then
-			consoleDelay(1, "Infected machine's firewall has been triggered.", {255, 35, 0}, function()
-				table.insert(timers["firewall"], newRepeatTimer(8, function()
-					local s = love.math.random(100)
-
-					if s < 30 then
-						local x = love.math.random(2, 16)
-						local y = love.math.random(9, 10)
-						
-						table.insert(objects["firewall"], newFirewall((x * 16), (y * 16)))
-
-						local x = love.math.random(2, 16)
-						local y = love.math.random(9, 10)
-
-						table.insert(objects["firewall"], newFirewall((x * 16), (y * 16)))
-					end
-				end))
-			end)
-			events["firewall"] = true
-		end
-	end
-
-	--OH FUCK PLOT TWIST
-	if score == 1024 then
-		scorei = scorei + 1
-		score = 1
-
-		consoleDelay(0.3, "Thanks for that. You monster of a virus.", nil, function()
-			timers["bits"] = {} 
-			timers["av"] = {} 
-			timers["events"] = {}
-			timers["firewall"] = {}
-			objects["bit"] = {}
-			bgm:stop()
-		end)
-		consoleDelay(6, "You're nothing to me now.", nil, function()
-			objects["player"][1]:die(true)
-		end)
-		consoleDelay(10, "Running /reboot -3 on remote machine..")
-		consoleDelay(15, "...", nil, function()
-			blipsnd:play()
-			gameFunctions.changeState("win")
-		end)
-	end
-
 	physicsupdate(dt)
 end
 
@@ -242,15 +137,14 @@ function game_draw()
 	end
 
 	for k, v in pairs(backgroundLines) do
-		love.graphics.setColor(v.colors)
-		love.graphics.rectangle("fill", v.x * scale, v.y * scale, v.width * scale, v.height * scale)
+		v:draw()
 	end
 
 	love.graphics.setColor(255, 255, 255, 255)
 
 	love.graphics.push()
 
-	love.graphics.translate(tremorX, tremorY)
+	love.graphics.translate(tremorX + mapscrollx, tremorY + mapscrolly)
 	love.graphics.draw(gameBatch)
 
 	for k, v in pairs(objects) do
@@ -267,17 +161,15 @@ function game_draw()
 
 	love.graphics.setColor(0, 0, 0, 255)
 
-	love.graphics.print("Score: " .. score .. scoreTypes[scorei] .. " / " .. "1MB", 4 * scale, gameFunctions.getHeight() * scale - backgroundFont:getHeight("Score: " .. score))
-
 	love.graphics.setColor(255, 255, 255, 255)
 	if gameover then
 		love.graphics.draw(gameoverimg, gameFunctions.getWidth() / 2 * scale - (38 / 2) * scale, gameFunctions.getHeight() / 2 * scale - (58 / 2) * scale + math.sin(gameoversin) * 20, 0, scale, scale)
 
-		love.graphics.print("Press 'R' to retry.", gameFunctions.getWidth() / 2 * scale - backgroundFont:getWidth("Press 'R' to retry") / 2, gameFunctions.getHeight() / 2 * scale - backgroundFont:getWidth("Press 'R' to retry") / 2 + 100 * scale  + math.sin(gameoversin) * 20)
+		love.graphics.print("Press '" .. controls["pause"] .. "' to retry.", gameFunctions.getWidth() / 2 * scale - backgroundFont:getWidth("Press '" .. controls["pause"] .. "' to retry.") / 2, gameFunctions.getHeight() / 2 * scale - backgroundFont:getWidth("Press '" .. controls["pause"] .. "' to retry.") / 2 + 100 * scale  + math.sin(gameoversin) * 20)
 	end
 
 	if paused and not gameover then
-		love.graphics.print("Game Paused", gameFunctions.getWidth() / 2 * scale - backgroundFont:getWidth("Game Paused") / 2, gameFunctions.getHeight() / 2 * scale - backgroundFont:getHeight("Game Paused") / 2)
+		pauseMenu:draw()
 	end
 end
 
@@ -296,24 +188,32 @@ function nextMap()
 end
 
 function game_keypressed(key)
-	if key == "escape" then
-		paused = not paused
+	if key == controls["pause"] then
+		if not gameover then
+			paused = not paused
+		else
+			gameFunctions.changeState("game")
+		end
+	end
+
+	if paused then
+		pauseMenu:keypressed(key)
 	end
 
 	if not objects["player"][1] then
-		if key == "r" and gameover then
-			gameFunctions.changeState("game")
-		end
-
 		return
 	end
 
-	if key == "a" then
+	if key == controls["left"] then
 		objects["player"][1]:moveleft(true)
-	elseif key == "d" then
+	elseif key == controls["right"] then
 		objects["player"][1]:moveright(true)
-	elseif key == " " then
+	elseif key == controls["jump"] then
 		objects["player"][1]:jump()
+	end
+
+	if key == "lshift" then
+		objects["player"][1]:dash()
 	end
 end
 
@@ -322,15 +222,15 @@ function game_keyreleased(key)
 		return
 	end
 
-	if key == "a" then
+	if key == controls["left"] then
 		objects["player"][1]:moveleft(false)
-	elseif key == "d" then
+	elseif key == controls["right"] then
 		objects["player"][1]:moveright(false)
 	end
 end
 
 function loadMap(map)
-	loadmap = love.image.newImageData("graphics/" .. map .. ".png")
+	loadmap = love.image.newImageData("maps/1.png")
 
 	objects = {}
 
@@ -343,10 +243,9 @@ function loadMap(map)
 	objects["proxy"] = {}
 	objects["firewall"] = {}
 
-	objects["console"] = 
-	{
-		newConsole("Console initialized. Use A and D to move and SPACE to jump.")
-	}
+	objects["console"] = {}
+
+	objects["bullet"] = {}
 
 	objects["antivirus"] = {}
 	timers = { ["bits"] = {} , ["console"] = {} , ["av"] = {} , ["events"] = {} , ["firewall"] = {} }
@@ -373,24 +272,30 @@ function loadMap(map)
 			local r, g, b = loadmap:getPixel(x - 1, y - 1)
 
 			if r == 0 and g == 0 and b == 0 then
-				table.insert(objects["tile"], newTile((x - 1) * 16, (y - 1) * 16, 1))
+				table.insert(objects["tile"], tile:new((x - 1) * 16, (y - 1) * 16, 1))
 			elseif r == 255 and g == 0 and b == 0 then
 				playerX, playerY = (x - 1) * 16, (y - 1) * 16
+				--table.insert(objects["tile"], tile:new((x - 1) * 16, (y - 1) * 16, 1, true))
+			elseif r == 255 and g == 255 and b == 255 then
+				--table.insert(objects["tile"], tile:new((x - 1) * 16, (y - 1) * 16, 1, true))
 			end
 		end
 	end
 
-	consoleDelay(8, "Uploading virus.. 100%", {255, 35, 0}, function() table.insert(objects["player"], newPlayer(playerX, playerY, true)) bgm_start:stop() bgm:play() end)
+	mapwidth = loadmap:getWidth()
+	mapheight = loadmap:getHeight()
 
-	consoleDelay(14, "Streaming bits/s: 3", {255, 255, 255}, function()
-		table.insert(timers["bits"], newRepeatTimer(3, function()
-			if #objects["bit"] < 6 and #objects["proxy"] == 0 then
-				table.insert(objects["bit"], newBit(love.math.random(3 * 16, 15 * 16), love.math.random(2 * 16, 9 * 16)))
-			end
-		end))
-	end)
+	--[[roomCount = 1
+	while roomCount < 10 do
+		game_newRoom()
+		roomCount = roomCount + 1
+	end]]
 
-	consoleDelay(18, "Stomp bits to infect the machine and steal data")
+	--make a default map lol
+
+	eventSystem:queue("console", {"Hello, world!"})
+	eventSystem:queue("wait", 4)
+	eventSystem:queue("spawnplayer", {playerX, playerY})
 end
 
 function consoleDelay(t, s, c, f)
@@ -446,15 +351,12 @@ function newRepeatTimer(t, f)
 	return timerthing
 end
 
-function newBackgroundLine(dir)
-	local x = love.math.random(4, gameFunctions.getWidth() - 8)
+function newBackgroundLine()
 	local y = 0
-
-	local r, g, b, a = love.math.random(120, 255), love.math.random(120, 255), love.math.random(120, 255), 100
 
 	local line = {}
 
-	line.x = x
+	line.x = love.math.random(4, gameFunctions.getWidth() - 8)
 	line.y = y
 	line.initX = x
 	line.initY = y
@@ -464,7 +366,30 @@ function newBackgroundLine(dir)
 	line.width = love.math.random(4, 8)
 	line.height = love.math.random(30, 40)
 
-	line.colors = {r, g, b, a}
+	line.colors = {love.math.random(120, 255), love.math.random(120, 255), love.math.random(120, 255), 100}
+
+	function line:draw()
+		love.graphics.setColor(self.colors)
+		love.graphics.rectangle("fill", self.x * scale, self.y * scale, self.width * scale, self.height * scale)
+	end
+
+	function line:update(dt)
+		self.y = self.y + self.speed * dt
+		
+		if self.y > gameFunctions.getHeight() then
+			self.x = self:newX()
+			self.y = 0
+			self.colors = self:newColors() --seems legal
+		end
+	end
+
+	function line:newX()
+		return love.math.random(4, gameFunctions.getWidth() - 8)
+	end
+
+	function line:newColors()
+		return {love.math.random(120, 255), love.math.random(120, 255), love.math.random(120, 255), 100}
+	end
 
 	return line
 end
