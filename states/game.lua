@@ -3,17 +3,18 @@ function game_init()
 
 	loadMap(1)
 
-	score = 0
+	titleNums = 
+	{
+		["top"] = {},
+		["bottom"] = {}
+	}
 
-	backgroundLines = {}
-	for k = 1, 16 do
-		backgroundLines[k] = newBackgroundLine(backgroundLines, k)
-	end
+	makeTitleNums()
+
+	score = 0
 
 	gameover = false
 	gameoversin = 0
-	tremorX = 0
-	tremorY = 0
 
 	scoreTypes = {"KB", "MB", "GB"}
 	scorei = 1
@@ -22,10 +23,7 @@ function game_init()
 	combotimeout = 0
 	paused = false
 
-	bgm_start:play()
-	bgm:stop()
-
-	pauseMenu = newPauseMenu()
+	--pauseMenu = newPauseMenu()
 end
 
 function game_update(dt)
@@ -43,40 +41,13 @@ function game_update(dt)
 		end
 	end
 
-	if tremorX and tremorY then
-		if tremorX > 0 then
-			tremorX = math.max(tremorX - 10 * dt, 0)
-		else
-			tremorX = math.min(tremorX + 10 * dt, 0)
-		end
+	for k, j in pairs(titleNums) do
+		for i, v in ipairs(j) do
+			v[3] = v[3] + v[4] * dt
 
-		if tremorY > 0 then
-			tremorY = math.max(tremorY - 10 * dt, 0)
-		else
-			tremorY = math.min(tremorY + 10 * dt, 0)
-		end
-	end
-
-	if gameover then
-		gameoversin = gameoversin + dt
-
-		for k, v in pairs(objects["digits"]) do
-			v:update(dt)
-		end
-
-		for k, v in pairs(objects["explosion"]) do
-			v:update(dt)
-		end
-
-		return
-	end
-
-	if combo > 1 then
-		if combotimeout < 1 then
-			combotimeout = combotimeout + dt
-		else
-			combo = 0
-			combotimeout = 0
+			if v[3] * 16 > gameFunctions.getHeight() then
+				v[3] = 0
+			end
 		end
 	end
 
@@ -88,40 +59,11 @@ function game_update(dt)
 		end	
 	end
 
-	for k, v in pairs(timers) do
-		for j, w in pairs(v) do
-			w:update(dt)
-
-			if w.remove then
-				table.remove(timers[k], j)
-			end
-		end
-	end
-
-	for k, v in pairs(backgroundLines) do
+	for k, v in pairs(consoles) do
 		v:update(dt)
-	end
 
-	if background[currentPos].fadeOut then
-		background[currentPos].fade = math.max(0, background[currentPos].fade - 160 * dt)
-
-		if positionTimer == 0 then
-			positionTimer = 0.01
-		end
-	else
-		if positionTimer > 0 then
-			positionTimer = positionTimer - dt
-		else
-			currentPos = love.math.random(#background)
-			background[currentPos].fadeOut = true
-			positionTimer = 0.01
-		end
-	end
-
-	for k = #background, 1, -1 do
-		if background[k].fade == 0 then
-			background[k].fade = 255
-			background[k].fadeOut = false
+		if v.remove then
+			table.remove(consoles, k)
 		end
 	end
 
@@ -129,24 +71,22 @@ function game_update(dt)
 end
 
 function game_draw()
-	for j = 1, #background do
-		if background[j].fadeOut then
-			love.graphics.setColor(255, 255, 255, background[j].fade)
-			love.graphics.print(background[j].value, background[j].x, background[j].y)
-		end
-	end
-
-	for k, v in pairs(backgroundLines) do
-		v:draw()
-	end
-
 	love.graphics.setColor(255, 255, 255, 255)
 
-	love.graphics.push()
+	--love.graphics.push()
 
-	love.graphics.translate(tremorX + mapscrollx, tremorY + mapscrolly)
-	love.graphics.draw(gameBatch)
+	--love.graphics.translate(tremorX + mapscrollx, tremorY + mapscrolly)
 
+	love.graphics.setFont(backgroundFont)
+	for k, v in ipairs(titleNums["top"]) do
+		love.graphics.setScreen("top")
+		love.graphics.setColor(0, 128, 0)
+		love.graphics.print(v[1], 5 + (v[2] - 1) * 16, 1 + (v[3] - 1) * 16)
+	end
+
+	love.graphics.setScreen("top")
+
+	love.graphics.setColor(255, 255, 255)
 	for k, v in pairs(objects) do
 		for j, w in pairs(v) do
 			if w.draw then
@@ -155,36 +95,57 @@ function game_draw()
 		end	
 	end
 
-	love.graphics.pop()
-
-	love.graphics.setFont(backgroundFont)
-
-	love.graphics.setColor(0, 0, 0, 255)
-
-	love.graphics.setColor(255, 255, 255, 255)
-	if gameover then
-		love.graphics.draw(gameoverimg, gameFunctions.getWidth() / 2 * scale - (38 / 2) * scale, gameFunctions.getHeight() / 2 * scale - (58 / 2) * scale + math.sin(gameoversin) * 20, 0, scale, scale)
-
-		love.graphics.print("Press '" .. controls["pause"] .. "' to retry.", gameFunctions.getWidth() / 2 * scale - backgroundFont:getWidth("Press '" .. controls["pause"] .. "' to retry.") / 2, gameFunctions.getHeight() / 2 * scale - backgroundFont:getWidth("Press '" .. controls["pause"] .. "' to retry.") / 2 + 100 * scale  + math.sin(gameoversin) * 20)
+	for k, v in pairs(consoles) do
+		v:draw()
 	end
 
-	if paused and not gameover then
-		pauseMenu:draw()
+	--INTERFACE
+
+	love.graphics.setScreen("bottom")
+
+	love.graphics.setColor(255, 255, 255)
+	love.graphics.draw(UIIcons["linux"], gameFunctions.getWidth() / 2 - UIIcons["linux"]:getWidth() / 2, gameFunctions.getHeight() / 2 - UIIcons["linux"]:getHeight() / 2)
+
+	local state, percent = love.system.getPowerInfo()
+	local batteryimg = UIIcons["battery"][1]
+
+	local batteryColor = {0, 127, 14}
+	local percentColor = {0, 155, 15}
+
+	if state == "charging" then
+		percentColor = {255, 106, 0}
+		batteryColor = {196, 78, 0}
+		love.graphics.draw(UIIcons["battery"][2], 2, gameFunctions.getHeight() - batteryimg:getHeight() - 2)
 	end
-end
 
-function game_mousepressed(x, y, button)
-
-end
-
-function nextMap()
-	currentmap = currentmap + 1
-
-	if love.filesystem.exists("graphics/" .. currentmap .. ".png") then
-		loadMap(currentmap)
-	else
-		return
+	if not percent then
+		percent = 0
 	end
+
+	if state ~= "charging" then
+		if percent > 60 and percent < 85 then
+			percentColor = {219, 182, 0}
+			batteryColor = {193, 161, 0}
+		elseif percent > 20 and percent < 60 then
+			percentColor = {255, 106, 0}
+			batteryColor = {196, 78, 0}
+		elseif percent < 20 then
+			percentColor = {232, 0, 0}
+			batteryColor = {190, 0, 0}
+		end
+	end
+
+	love.graphics.setColor(unpack(batteryColor))
+	love.graphics.draw(batteryimg, 2, gameFunctions.getHeight() - batteryimg:getHeight() - 2)
+
+	love.graphics.setColor(unpack(percentColor))
+	love.graphics.rectangle("fill", 5, (gameFunctions.getHeight() - batteryimg:getHeight() - 2) + 2, (percent / 100) * 14, 9)
+
+	--love.graphics.print(state, gameFunctions.getWidth() / 2, gameFunctions.getHeight() - 16)
+
+	love.graphics.setColor(255, 255, 255)
+	love.graphics.print(os.date("%I:%M %p"), gameFunctions.getWidth() - backgroundFont:getWidth(os.date("%I:%M %p")) - 2, gameFunctions.getHeight() - backgroundFont:getHeight(os.date("%I:%M %p")) - 1)
+	--love.graphics.pop()
 end
 
 function game_keypressed(key)
@@ -196,8 +157,14 @@ function game_keypressed(key)
 		end
 	end
 
+	if key == "select" then
+		if paused then
+			gameFunctions.changeState("title")
+		end
+	end
+
 	if paused then
-		pauseMenu:keypressed(key)
+		--pauseMenu:keypressed(key)
 	end
 
 	if not objects["player"][1] then
@@ -230,8 +197,6 @@ function game_keyreleased(key)
 end
 
 function loadMap(map)
-	loadmap = love.image.newImageData("maps/1.png")
-
 	objects = {}
 
 	objects["player"] = {}
@@ -243,59 +208,55 @@ function loadMap(map)
 	objects["proxy"] = {}
 	objects["firewall"] = {}
 
-	objects["console"] = {}
+	consoles = {}
 
 	objects["bullet"] = {}
 
 	objects["antivirus"] = {}
-	timers = { ["bits"] = {} , ["console"] = {} , ["av"] = {} , ["events"] = {} , ["firewall"] = {} }
 
-	mapscrollx = 0
-	mapscrolly = 0
-
-	local values = {"0", "1"}
-	background = {}
-	for k = 1, loadmap:getHeight() do
-		for y = 1, loadmap:getWidth() do 
-			local val = values[love.math.random(#values)]
-			table.insert(background, {value = val, fade = 255, x = (y - 1) * 16 * scale + (16 / 2) * scale - backgroundFont:getWidth(val) / 2, y = (k - 1) * 16 * scale + (16 / 2) * scale - backgroundFont:getHeight(val) / 2})
-		end
-	end
-	currentPos = 1
-	positionTimer = 0.01
-
-	gameBatch:clear()
+	map = maps[map]
+	
 
 	local playerX, playerY
-	for y = 1, loadmap:getHeight() do
-		for x = 1, loadmap:getWidth() do
-			local r, g, b = loadmap:getPixel(x - 1, y - 1)
-
-			if r == 0 and g == 0 and b == 0 then
-				table.insert(objects["tile"], tile:new((x - 1) * 16, (y - 1) * 16, 1))
-			elseif r == 255 and g == 0 and b == 0 then
-				playerX, playerY = (x - 1) * 16, (y - 1) * 16
-				--table.insert(objects["tile"], tile:new((x - 1) * 16, (y - 1) * 16, 1, true))
-			elseif r == 255 and g == 255 and b == 255 then
-				--table.insert(objects["tile"], tile:new((x - 1) * 16, (y - 1) * 16, 1, true))
+	for y = 1, #map do
+		for x = 1, #map[1] do
+			if map[y][x] == 1 then
+				objects["tile"][x .. "-" .. y] = tile:new((x - 1) * 16, (y - 1) * 16)
+			elseif map[y][x] == 3 then
+				playerX = (x - 1) * 16
+				playerY = (y - 1) * 16
+			elseif map[y][x] == 2 then
+				table.insert(objects["firewall"], firewall:new((x - 1) * 16, (y - 1) * 16))
 			end
 		end
 	end
 
-	mapwidth = loadmap:getWidth()
-	mapheight = loadmap:getHeight()
+	eventSystem:queue("console", {"Alright.. so this goes here.."})
+	eventSystem:queue("wait", 6)
+	eventSystem:queue("console", {"... and this needs to be secured.."})
 
-	--[[roomCount = 1
-	while roomCount < 10 do
-		game_newRoom()
-		roomCount = roomCount + 1
-	end]]
+	eventSystem:queue("wait", 6)
+	eventSystem:queue("console", {"[HOST] Connecting to remote PC at XXX.XX.XXX.X:XXXXX .."})
+	eventSystem:queue("wait", 8)
 
-	--make a default map lol
-
-	eventSystem:queue("console", {"Hello, world!"})
-	eventSystem:queue("wait", 4)
 	eventSystem:queue("spawnplayer", {playerX, playerY})
+	eventSystem:queue("wait", 1)
+	eventSystem:queue("console", {"Good. Now my monsterous virus .. wait .. is this a PowerPC 95?"})
+
+	eventSystem:queue("wait", 8)
+	eventSystem:queue("console", {"Whatever. Using you, I can stream data back to me."})
+	eventSystem:queue("wait", 8)
+
+	eventSystem:queue("console", {"Go ahead and move with CIRCLEPAD LEFT or RIGHT."})
+	eventSystem:queue("wait", 10)
+	eventSystem:queue("console", {"Now to decrypt this stupid firewall blocking C:\\.."})
+
+	eventSystem:queue("wait", 10)
+	eventSystem:queue("console", {"[HOST] Running /bin/firewalldecrypt.sh on remote PC.."})
+	eventSystem:queue("wait", 6)
+
+	eventSystem:queue("console", {"[HOST] Decryption completed."})
+	eventSystem:queue("firewallfree")
 end
 
 function consoleDelay(t, s, c, f)
@@ -349,47 +310,4 @@ function newRepeatTimer(t, f)
 	end
 
 	return timerthing
-end
-
-function newBackgroundLine()
-	local y = 0
-
-	local line = {}
-
-	line.x = love.math.random(4, gameFunctions.getWidth() - 8)
-	line.y = y
-	line.initX = x
-	line.initY = y
-
-	line.speed = love.math.random(80, 160)
-
-	line.width = love.math.random(4, 8)
-	line.height = love.math.random(30, 40)
-
-	line.colors = {love.math.random(120, 255), love.math.random(120, 255), love.math.random(120, 255), 100}
-
-	function line:draw()
-		love.graphics.setColor(self.colors)
-		love.graphics.rectangle("fill", self.x * scale, self.y * scale, self.width * scale, self.height * scale)
-	end
-
-	function line:update(dt)
-		self.y = self.y + self.speed * dt
-		
-		if self.y > gameFunctions.getHeight() then
-			self.x = self:newX()
-			self.y = 0
-			self.colors = self:newColors() --seems legal
-		end
-	end
-
-	function line:newX()
-		return love.math.random(4, gameFunctions.getWidth() - 8)
-	end
-
-	function line:newColors()
-		return {love.math.random(120, 255), love.math.random(120, 255), love.math.random(120, 255), 100}
-	end
-
-	return line
 end

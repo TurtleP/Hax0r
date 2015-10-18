@@ -1,62 +1,69 @@
-function newFirewall(x, y)
-	local wall = {}
+firewall = class("firewall")
 
-	wall.x = x
-	wall.y = y
-	wall.width = 16
-	wall.height = 16
+function firewall:init(x, y)
+	self.x = x
+	self.y = y
+	self.width = 16
+	self.height = 16
 
-	wall.mask = {}
+	self.mask = 
+	{
+		["player"] = true
+	}
 
-	wall.speedx = 0
-	wall.speedy = 0
+	self.speedx = 0
+	self.speedy = 0
 
-	wall.timer = 0
-	wall.quadi = 1
-	wall.animationtimer = 0
-	wall.fade = 0
+	self.quadi = 1
+	self.animationtimer = 0
 
-	function wall:upCollide(name, data)
-		if name == "player" then
-			return false
-		end
+	self.fadeout = false
+	self.fadeValue = 1
+end
+
+function firewall:upCollide(name, data)
+	if name == "player" then
+		return false
 	end
+end
 
-	function wall:downCollide(name, data)
-		if name == "player" then
-			return false
-		end
+function firewall:downCollide(name, data)
+	if name == "player" then
+		return false
 	end
+end
 
-	function wall:leftCollide(name, data)
-		if name == "player" then
-			return false
-		end
+function firewall:leftCollide(name, data)
+	if name == "player" then
+		return false
 	end
+end
 
-	function wall:rightCollide(name, data)
-		if name == "player" then
-			return false
-		end
+function firewall:rightCollide(name, data)
+	if name == "player" then
+		return false
 	end
+end
 
-	function wall:update(dt)
-		if self.timer < 6 then
-			self.timer = self.timer + dt
+function firewall:update(dt)
+	self.animationtimer = self.animationtimer + 8 *dt
+	self.quadi = math.floor(self.animationtimer%2)+1
+
+	if self.fadeout then
+		if self.fadeValue > 0 then
+			self.fadeValue = math.max(self.fadeValue - dt, 0)
 		else
 			self.remove = true
 		end
-
-		self.fade = math.min(self.fade + dt / 2, 1)
-
-		self.animationtimer = self.animationtimer + 8 *dt
-		self.quadi = math.floor(self.animationtimer%8)+1
 	end
+end
 
-	function wall:draw()
-		love.graphics.setColor(255, 255, 255, 255 * self.fade)
-		love.graphics.draw(firewallimg, firewallquads[self.quadi], self.x * scale, self.y * scale, 0, scale, scale)
-	end
+function firewall:fade()
+	self.fadeout = true
+end
 
-	return wall
+function firewall:draw()
+	love.graphics.setColor(255, 255, 255, 255 * self.fadeValue)
+	love.graphics.draw(firewallimg[self.quadi], self.x, self.y, 0, scale, scale)
+	love.graphics.setColor(255, 255, 255, 255)
 end

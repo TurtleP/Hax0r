@@ -18,11 +18,13 @@ function eventsystem:update(dt)
 			local v = self.events[self.i]
 
 			if v.cmd == "console" then
-				objects["console"][1] = console:new(v.args[1], v.args[2], v.args[3])
+				consoles[1] = console:new(v.args[1], v.args[2], v.args[3])
 			elseif v.cmd == "wait" then
 				self.sleep = v.args
 			elseif v.cmd == "spawnplayer" then
 				objects["player"][1] = player:new(v.args[1], v.args[2], true)
+			elseif v.cmd == "firewallfree" then
+				objects["firewall"][1]:fade()
 			end
 		end
 	end

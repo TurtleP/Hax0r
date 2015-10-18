@@ -12,6 +12,7 @@ require 'classes/proxy'
 
 require 'libraries/event'
 require 'libraries/physics'
+JSON = require 'libraries/json'
 
 require 'states/game'
 require 'states/title'
@@ -20,13 +21,32 @@ require 'states/credits'
 
 function love.load()
 
+	love.window.setMode(400, 240)
+	controls = {}
+
+	controls["right"] = "cpadright"
+	controls["left"] = "cpadleft"
+	controls["jump"] = "a"
+	controls["pause"] = "start"
+
+	homebrewMode = true
+
 	if love.system.getOS() ~= "3ds" then
 		--image filter
 		love.graphics.setDefaultFilter("nearest", "nearest")
 		love.window.setTitle("Hax0r?")
 		love.window.setIcon(love.image.newImageData("graphics/icon.png"))
 
-		function love.graphics.setScreen() end
+		function love.graphics.setScreen(s) 
+
+		end
+
+		controls["right"] = "d"
+		controls["left"] = "a"
+		controls["jump"] = " "
+		controls["pause"] = "escape"
+
+		homebrewMode = false
 	end
 
 	math.randomseed(os.time())
@@ -34,14 +54,31 @@ function love.load()
 
 	titleimg = love.graphics.newImage("graphics/title.png")
 
+	tileimg = love.graphics.newImage("graphics/base.png")
+
+	UIIcons =
+	{
+		["linux"] = love.graphics.newImage("graphics/bottomlogo.png"),
+		["battery"] = {love.graphics.newImage("graphics/3ds/battery.png"), love.graphics.newImage("graphics/3ds/charging.png")}
+	}
+
+	playerimg = {}
+	for k = 1, 3 do
+		playerimg[k] = love.graphics.newImage("graphics/player" .. k .. ".png")
+	end
+
+	firewallimg = {}
+	for k = 1, 2 do
+		firewallimg[k] = love.graphics.newImage("graphics/firewall" .. k .. ".png")
+	end
+
 	--other
 	backgroundFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 16)
-	consoleFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 8)
+	consoleFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 16)
 
-	menuFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 64)
-	buttonFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 24)
-
-	love.window.setMode(400, 240)
+	--maps
+	maps = {}
+	maps[1] = require "maps/1"
 
 	gameFunctions.changeState("title")
 end
@@ -49,10 +86,10 @@ end
 function love.update(dt)
 	if dt > 0 then
 		dt = math.min(1/60, dt)
-	end
 
-	if _G[state .. "_update"] then
-		_G[state .. "_update"](dt)
+		if _G[state .. "_update"] then
+			_G[state .. "_update"](dt)
+		end
 	end
 end
 
