@@ -55,6 +55,8 @@ function player:init(x, y, fadein)
 	self.blinkrand = math.random(4)
 
 	self.shouldAnimate = false
+
+	self.health = 5
 end
 
 function player:update(dt)

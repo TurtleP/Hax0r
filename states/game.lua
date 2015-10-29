@@ -101,51 +101,68 @@ function game_draw()
 
 	--INTERFACE
 
-	love.graphics.setScreen("bottom")
+	if homebrewMode then
+		love.graphics.setScreen("bottom")
 
-	love.graphics.setColor(255, 255, 255)
-	love.graphics.draw(UIIcons["linux"], gameFunctions.getWidth() / 2 - UIIcons["linux"]:getWidth() / 2, gameFunctions.getHeight() / 2 - UIIcons["linux"]:getHeight() / 2)
+		local state, percent = love.system.getPowerInfo()
+		local batteryimg = UIIcons["battery"][1]
 
-	local state, percent = love.system.getPowerInfo()
-	local batteryimg = UIIcons["battery"][1]
+		local batteryColor = {0, 127, 14}
+		local percentColor = {0, 155, 15}
 
-	local batteryColor = {0, 127, 14}
-	local percentColor = {0, 155, 15}
+		local batteryLeft = percent
 
-	if state == "charging" then
-		percentColor = {255, 106, 0}
-		batteryColor = {196, 78, 0}
-		love.graphics.draw(UIIcons["battery"][2], 2, gameFunctions.getHeight() - batteryimg:getHeight() - 2)
-	end
-
-	if not percent then
-		percent = 0
-	end
-
-	if state ~= "charging" then
-		if percent > 60 and percent < 85 then
-			percentColor = {219, 182, 0}
-			batteryColor = {193, 161, 0}
-		elseif percent > 20 and percent < 60 then
+		love.graphics.print("Battery left: " .. batteryLeft, 0, 0)
+		
+		if state == "charging" then
 			percentColor = {255, 106, 0}
 			batteryColor = {196, 78, 0}
-		elseif percent < 20 then
-			percentColor = {232, 0, 0}
-			batteryColor = {190, 0, 0}
+			love.graphics.draw(UIIcons["battery"][2], 2, gameFunctions.getHeight() - batteryimg:getHeight() - 2)
 		end
+
+		if not batteryLeft then
+			batteryLeft = 0
+		end
+
+		if state ~= "charging" then
+			if batteryLeft > 50 and batteryLeft < 75 then
+				percentColor = {219, 182, 0}
+				batteryColor = {193, 161, 0}
+			elseif batteryLeft > 25 and batteryLeft < 50 then
+				percentColor = {255, 106, 0}
+				batteryColor = {196, 78, 0}
+			elseif batteryLeft < 25 then
+				percentColor = {232, 0, 0}
+				batteryColor = {190, 0, 0}
+			end
+		end
+
+		love.graphics.setColor(255, 255, 255)
+		love.graphics.draw(UIIcons["background"], 0, 18)
+
+		love.graphics.setColor(255, 255, 255)
+		love.graphics.draw(UIIcons["linux"], gameFunctions.getWidth() / 2 - UIIcons["linux"]:getWidth() / 2, gameFunctions.getHeight() / 2 - UIIcons["linux"]:getHeight() / 2)
+
+		love.graphics.setColor(64, 64, 64)
+		love.graphics.rectangle("fill", 0, 0, gameFunctions.getWidth(), 18)
+		love.graphics.rectangle("fill", 0, gameFunctions.getHeight() - 18, gameFunctions.getWidth(), 18)
+
+
+		love.graphics.setColor(unpack(batteryColor))
+		love.graphics.draw(batteryimg, 2, gameFunctions.getHeight() - batteryimg:getHeight() - 2)
+
+		love.graphics.setColor(unpack(percentColor))
+		love.graphics.rectangle("fill", 5, (gameFunctions.getHeight() - batteryimg:getHeight() - 2) + 2, (batteryLeft / 100) * 14, 9)
+
+		love.graphics.setColor(255, 255, 255)
+		love.graphics.print(os.date("%I:%M %p"), gameFunctions.getWidth() - backgroundFont:getWidth(os.date("%I:%M %p")) - 2, gameFunctions.getHeight() - backgroundFont:getHeight(os.date("%I:%M %p")) - 1)
+		
+		if objects["player"][1] then
+			love.graphics.draw(UIIcons["health"][objects["player"][1].health], 2, 1)
+		end
+
+		love.graphics.draw(UIIcons["power"], gameFunctions.getWidth() - 18, 1)
 	end
-
-	love.graphics.setColor(unpack(batteryColor))
-	love.graphics.draw(batteryimg, 2, gameFunctions.getHeight() - batteryimg:getHeight() - 2)
-
-	love.graphics.setColor(unpack(percentColor))
-	love.graphics.rectangle("fill", 5, (gameFunctions.getHeight() - batteryimg:getHeight() - 2) + 2, (percent / 100) * 14, 9)
-
-	--love.graphics.print(state, gameFunctions.getWidth() / 2, gameFunctions.getHeight() - 16)
-
-	love.graphics.setColor(255, 255, 255)
-	love.graphics.print(os.date("%I:%M %p"), gameFunctions.getWidth() - backgroundFont:getWidth(os.date("%I:%M %p")) - 2, gameFunctions.getHeight() - backgroundFont:getHeight(os.date("%I:%M %p")) - 1)
-	--love.graphics.pop()
 end
 
 function game_keypressed(key)
@@ -181,6 +198,12 @@ function game_keypressed(key)
 
 	if key == "lshift" then
 		objects["player"][1]:dash()
+	end
+end
+
+function game_mousepressed(x, y, button)
+	if x > gameFunctions.getWidth() - 18 and x < (gameFunctions.getWidth() - 18) + 16 and y > 1 and y < 18 then
+		paused = not paused
 	end
 end
 
@@ -227,6 +250,10 @@ function loadMap(map)
 				playerY = (y - 1) * 16
 			elseif map[y][x] == 2 then
 				table.insert(objects["firewall"], firewall:new((x - 1) * 16, (y - 1) * 16))
+			elseif map[y][x] == 5 then
+				objects["tile"][x .. "-" .. y] = tile:new((x - 1) * 16, (y - 1) * 16, "water")
+			elseif map[y][x] == 6 then
+				objects["tile"][x .. "-" .. y] = tile:new((x - 1) * 16, (y - 1) * 16, "waterbase")
 			end
 		end
 	end

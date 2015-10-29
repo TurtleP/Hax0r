@@ -1,0 +1,4 @@
+{
+	"musicEnemy": [ ".flac", ".mp3", ".m4a", ".ogg", ".wav", ".midi" ],
+	"paintEnemy": [ ".png", ".jpg", ".gif", ".psd", ".bmp" ]
+}

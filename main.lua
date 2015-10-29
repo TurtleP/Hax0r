@@ -12,7 +12,6 @@ require 'classes/proxy'
 
 require 'libraries/event'
 require 'libraries/physics'
-JSON = require 'libraries/json'
 
 require 'states/game'
 require 'states/title'
@@ -58,9 +57,16 @@ function love.load()
 
 	UIIcons =
 	{
-		["linux"] = love.graphics.newImage("graphics/bottomlogo.png"),
-		["battery"] = {love.graphics.newImage("graphics/3ds/battery.png"), love.graphics.newImage("graphics/3ds/charging.png")}
+		["linux"] = love.graphics.newImage("graphics/interface/bottomlogo.png"),
+		["battery"] = {love.graphics.newImage("graphics/3ds/battery.png"), love.graphics.newImage("graphics/3ds/charging.png")},
+		["health"] = {},
+		["background"] = love.graphics.newImage("graphics/interface/background.png"),
+		["power"] = love.graphics.newImage("graphics/interface/power.png")
 	}
+
+	for k = 1, 5 do
+		UIIcons["health"][k] = love.graphics.newImage("graphics/interface/health" .. k .. ".png")
+	end
 
 	playerimg = {}
 	for k = 1, 3 do
@@ -72,6 +78,13 @@ function love.load()
 		firewallimg[k] = love.graphics.newImage("graphics/firewall" .. k .. ".png")
 	end
 
+	waterimg = {}
+	for k = 1, 6 do
+		waterimg[k] = love.graphics.newImage("graphics/sea/" .. k .. ".png")
+	end
+
+	waterbaseimg = love.graphics.newImage("graphics/sea/7.png")
+
 	--other
 	backgroundFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 16)
 	consoleFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 16)
@@ -79,6 +92,10 @@ function love.load()
 	--maps
 	maps = {}
 	maps[1] = require "maps/1"
+	maps[2] = require "maps/2"
+	maps[3] = require "maps/3"
+
+--	maps[4] = require "maps/save"
 
 	gameFunctions.changeState("title")
 end
