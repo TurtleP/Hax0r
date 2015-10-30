@@ -9,7 +9,7 @@ function title_init()
 	
 	titleUI =
 	{
-		newButton(gameFunctions.getWidth() / 2 - 82, 70, "New user session", function() gameFunctions.changeState("game") end, 1),
+		newButton(gameFunctions.getWidth() / 2 - 82, 70, "New user session", function() objects = {} gameFunctions.changeState("game") end, 1),
 		newButton(gameFunctions.getWidth() / 2 - 82, 112, "View credits", function() gameFunctions.changeState("credits") end, 2),
 		newButton(gameFunctions.getWidth() / 2 - 82, 154, "Exit terminal", function() love.event.quit() end, 3)
 	}
@@ -28,6 +28,10 @@ function title_update(dt)
 				v[3] = 0
 			end
 		end
+	end
+
+	if not titlemusic:isPlaying() then
+		titlemusic:play()
 	end
 end
 

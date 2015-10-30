@@ -19,6 +19,8 @@ function tile:init(x, y, id)
 		self.id = id
 
 		self.graphic = _G[id .. "img"]
+
+		self.passive = true
 	end
 end
 
@@ -35,8 +37,8 @@ function tile:draw()
 	if not self.id then
 		love.graphics.draw(tileimg, self.x, self.y)
 	else
-		if type(self.graphic) == "table" then
-			love.graphics.draw(self.graphic[self.quadi], self.x, self.y)
+		if self.id == "water" then
+			love.graphics.draw(self.graphic, waterquads[self.quadi], self.x, self.y)
 		else
 			love.graphics.draw(self.graphic, self.x, self.y)
 		end

@@ -37,3 +37,34 @@ end
 function eventsystem:clear()
 	self.events = {}
 end
+
+function eventsystem:onMapLoad(map)
+	if map == 1 then
+		eventSystem:queue("console", {"Alright.. so this goes here.."})
+		eventSystem:queue("wait", 6)
+		eventSystem:queue("console", {"... and this needs to be secured.."})
+
+		eventSystem:queue("wait", 6)
+		eventSystem:queue("console", {"[HOST] Connecting to remote PC at XXX.XX.XXX.X:XXXXX .."})
+		eventSystem:queue("wait", 8)
+
+		eventSystem:queue("spawnplayer", {playerX, playerY})
+		eventSystem:queue("wait", 1)
+		eventSystem:queue("console", {"Good. Now my monsterous virus .. wait .. is this a PowerPC 95?"})
+
+		eventSystem:queue("wait", 8)
+		eventSystem:queue("console", {"Whatever. Using you, I can stream data back to me."})
+		eventSystem:queue("wait", 8)
+
+		eventSystem:queue("console", {"Go ahead and move with CIRCLEPAD LEFT or RIGHT."})
+		eventSystem:queue("wait", 10)
+		eventSystem:queue("console", {"Now to decrypt this stupid firewall blocking C:\\.."})
+
+		eventSystem:queue("wait", 10)
+		eventSystem:queue("console", {"[HOST] Running /bin/firewalldecrypt.sh on remote PC.."})
+		eventSystem:queue("wait", 6)
+
+		eventSystem:queue("console", {"[HOST] Decryption completed."})
+		eventSystem:queue("firewallfree")
+	end
+end

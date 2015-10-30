@@ -1,7 +1,22 @@
 function game_init()
 	eventSystem = eventsystem:new()
 
-	loadMap(1)
+	currentMap = 1
+
+	maplist = {}
+
+	maplist[1] = maps[1]
+
+	local listCount = 2
+
+	while (listCount < 17) do
+		local rand = math.random(2, #maps)
+		maplist[listCount] = maps[rand]
+		table.remove(maps, rand)
+		listCount = listCount + 1
+	end
+
+	loadMap(currentMap)
 
 	titleNums = 
 	{
@@ -22,8 +37,6 @@ function game_init()
 	combo = 0
 	combotimeout = 0
 	paused = false
-
-	--pauseMenu = newPauseMenu()
 end
 
 function game_update(dt)
@@ -67,15 +80,32 @@ function game_update(dt)
 		end
 	end
 
+	--hacky shit but whatever
+	if not objects["player"][1] then
+		if not bgmstart:isPlaying() then
+			bgmstart:play()
+		end
+	else
+		if not bgm:isPlaying() then
+			bgm:play()
+		end
+	end
+
+	if mapscrollx > 0 then
+		mapscrollx = mapscrollx - 200 * dt
+	elseif mapscrollx < 0 then
+		mapscrollx = mapscrollx + 200 * dt
+	end
+
 	physicsupdate(dt)
 end
 
 function game_draw()
 	love.graphics.setColor(255, 255, 255, 255)
 
-	--love.graphics.push()
+	love.graphics.push()
 
-	--love.graphics.translate(tremorX + mapscrollx, tremorY + mapscrolly)
+	love.graphics.translate(mapscrollx, mapscrolly)
 
 	love.graphics.setFont(backgroundFont)
 	for k, v in ipairs(titleNums["top"]) do
@@ -94,6 +124,8 @@ function game_draw()
 			end
 		end	
 	end
+
+	love.graphics.pop()
 
 	for k, v in pairs(consoles) do
 		v:draw()
@@ -219,28 +251,32 @@ function game_keyreleased(key)
 	end
 end
 
-function loadMap(map)
-	objects = {}
+function loadMap(mapn)
+	--objects = {}
+
+	objects["firewall"] = {}
 
 	objects["player"] = {}
+	objects["playerdeath"] = {}
+
 	objects["tile"] = {}
-	objects["bit"] = {}
-	objects["bitblood"] = {}
-	objects["explosion"] = {}
-	objects["digits"] = {}
-	objects["proxy"] = {}
-	objects["firewall"] = {}
+
+	objects["audioblaster"] = {}
+	objects["notes"] = {}
+
+	objects["paintbird"] = {}
+	objects["paintdrop"] = {}
 
 	consoles = {}
 
-	objects["bullet"] = {}
-
-	objects["antivirus"] = {}
-
-	map = maps[map]
+	currentMap = mapn
 	
+	local map = maplist[mapn]
 
-	local playerX, playerY
+	mapscrollx = 0
+	mapscrolly = 0
+
+	playerX, playerY = 0, 0
 	for y = 1, #map do
 		for x = 1, #map[1] do
 			if map[y][x] == 1 then
@@ -250,40 +286,28 @@ function loadMap(map)
 				playerY = (y - 1) * 16
 			elseif map[y][x] == 2 then
 				table.insert(objects["firewall"], firewall:new((x - 1) * 16, (y - 1) * 16))
+			elseif map[y][x] == 4 then
+				table.insert(objects["audioblaster"], audioblaster:new((x - 1) * 16, (y - 1) * 16))
 			elseif map[y][x] == 5 then
-				objects["tile"][x .. "-" .. y] = tile:new((x - 1) * 16, (y - 1) * 16, "water")
+				objects["tile"][x .. "-" .. y] = tile:new((x - 1) * 16, (y - 1) * 16, "water", 5)
 			elseif map[y][x] == 6 then
 				objects["tile"][x .. "-" .. y] = tile:new((x - 1) * 16, (y - 1) * 16, "waterbase")
+			elseif map[y][x] == 7 then
+				--save point
+			elseif map[y][x] == 8 then
+				table.insert(objects["paintbird"], paintbird:new((x - 1) * 16, (y - 1) * 16))
 			end
 		end
 	end
 
-	eventSystem:queue("console", {"Alright.. so this goes here.."})
-	eventSystem:queue("wait", 6)
-	eventSystem:queue("console", {"... and this needs to be secured.."})
+	if playerX == 0 and playerY == 0 then
+		playerX = 0
+		playerY = 14 * 16
 
-	eventSystem:queue("wait", 6)
-	eventSystem:queue("console", {"[HOST] Connecting to remote PC at XXX.XX.XXX.X:XXXXX .."})
-	eventSystem:queue("wait", 8)
+		objects["player"][1] = player:new(playerX, playerY)
+	end
 
-	eventSystem:queue("spawnplayer", {playerX, playerY})
-	eventSystem:queue("wait", 1)
-	eventSystem:queue("console", {"Good. Now my monsterous virus .. wait .. is this a PowerPC 95?"})
-
-	eventSystem:queue("wait", 8)
-	eventSystem:queue("console", {"Whatever. Using you, I can stream data back to me."})
-	eventSystem:queue("wait", 8)
-
-	eventSystem:queue("console", {"Go ahead and move with CIRCLEPAD LEFT or RIGHT."})
-	eventSystem:queue("wait", 10)
-	eventSystem:queue("console", {"Now to decrypt this stupid firewall blocking C:\\.."})
-
-	eventSystem:queue("wait", 10)
-	eventSystem:queue("console", {"[HOST] Running /bin/firewalldecrypt.sh on remote PC.."})
-	eventSystem:queue("wait", 6)
-
-	eventSystem:queue("console", {"[HOST] Decryption completed."})
-	eventSystem:queue("firewallfree")
+	eventsystem:onMapLoad(mapn)
 end
 
 function consoleDelay(t, s, c, f)

@@ -1,4 +1,3 @@
-
 class = require 'libraries/middleclass'
 
 require 'classes/console'
@@ -12,11 +11,16 @@ require 'classes/proxy'
 
 require 'libraries/event'
 require 'libraries/physics'
+require 'libraries/gamefunctions'
 
 require 'states/game'
 require 'states/title'
 require 'states/win'
 require 'states/credits'
+
+
+require 'enemies/music'
+require 'enemies/paintbird'
 
 function love.load()
 
@@ -68,22 +72,31 @@ function love.load()
 		UIIcons["health"][k] = love.graphics.newImage("graphics/interface/health" .. k .. ".png")
 	end
 
-	playerimg = {}
+	playerimg = love.graphics.newImage("graphics/player-new.png")
+	playerquads = {}
 	for k = 1, 3 do
-		playerimg[k] = love.graphics.newImage("graphics/player" .. k .. ".png")
+		playerquads[k] = love.graphics.newQuad((k - 1) * 17, 0, 16, 16, playerimg:getWidth(), playerimg:getHeight())
 	end
 
-	firewallimg = {}
+	firewallimg = love.graphics.newImage("graphics/firewall.png")
+	firewallquads = {}
 	for k = 1, 2 do
-		firewallimg[k] = love.graphics.newImage("graphics/firewall" .. k .. ".png")
+		firewallquads[k] = love.graphics.newQuad((k - 1) * 17, 0, 16, 16, firewallimg:getWidth(), firewallimg:getHeight()) 
 	end
 
-	waterimg = {}
+	waterimg = love.graphics.newImage("graphics/digitalsea.png")
+	waterquads = {}
 	for k = 1, 6 do
-		waterimg[k] = love.graphics.newImage("graphics/sea/" .. k .. ".png")
+		waterquads[k] = love.graphics.newQuad((k - 1) * 17, 0, 16, 16, waterimg:getWidth(), waterimg:getHeight())
 	end
 
-	waterbaseimg = love.graphics.newImage("graphics/sea/7.png")
+	deathimg = love.graphics.newImage("graphics/death.png")
+	deathquads = {}
+	for k = 1, 9 do
+		deathquads[k] = love.graphics.newQuad((k - 1) * 17, 0, 16, 16, deathimg:getWidth(), deathimg:getHeight())
+	end
+
+	waterbaseimg = love.graphics.newImage("graphics/seatile.png")
 
 	--other
 	backgroundFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 16)
@@ -94,20 +107,35 @@ function love.load()
 	maps[1] = require "maps/1"
 	maps[2] = require "maps/2"
 	maps[3] = require "maps/3"
+	maps[4] = require "maps/4"
+
+	maps[2].offsetX = (25 * 16)
 
 --	maps[4] = require "maps/save"
+
+	--audio
+	titlemusic = love.audio.newSource("audio/title.wav")
+
+	consolesound = love.audio.newSource("audio/console.wav")
+	jumpsound = love.audio.newSource("audio/jump.wav")
+	playerspawn = love.audio.newSource("audio/playerspawn.wav")
+
+	bgmstart = love.audio.newSource("audio/bgm-start.wav")
+	bgm = love.audio.newSource("audio/bgm.wav")
+
+	gameoversnd = love.audio.newSource("audio/gameover.wav")
 
 	gameFunctions.changeState("title")
 end
 
 function love.update(dt)
-	if dt > 0 then
+	--if dt > 0 then
 		dt = math.min(1/60, dt)
 
 		if _G[state .. "_update"] then
 			_G[state .. "_update"](dt)
 		end
-	end
+--	end
 end
 
 function love.draw()

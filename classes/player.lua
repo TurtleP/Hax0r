@@ -21,9 +21,9 @@ function player:init(x, y, fadein)
 	self.mask = 
 	{
 		["tile"] = true,
-		["bit"] = true,
-		["antivirus"] = true,
-		["firewall"] = true
+		["firewall"] = true,
+		["paintbird"] = true,
+		["paintdrop"] = true
 	}
 	
 	self.quads = {}
@@ -46,10 +46,10 @@ function player:init(x, y, fadein)
 
 	self.animations =
 	{
-		playerimg[1],
-		playerimg[2],
-		playerimg[3],
-		playerimg[2]
+		1,
+		2,
+		3,
+		2
 	}
 
 	self.blinkrand = math.random(4)
@@ -57,6 +57,8 @@ function player:init(x, y, fadein)
 	self.shouldAnimate = false
 
 	self.health = 5
+
+	playerspawn:play()
 end
 
 function player:update(dt)
@@ -91,11 +93,20 @@ function player:update(dt)
 	else
 		self.shouldAnimate = true
 	end
+
+	if self.x > love.graphics.getWidth() then
+		mapscrollx = 25 * 16
+		loadMap(currentMap + 1)
+	elseif self.x + self.width < 0 then
+		mapscrollx = -(25 * 16)
+		loadMap(currentMap - 1)
+	end
 end
 
 function player:draw()
 	love.graphics.setColor(255, 255, 255, 255 * self.fade)
-	love.graphics.draw(self.animations[self.quadi], self.x , self.y )
+	love.graphics.draw(playerimg, playerquads[self.animations[self.quadi]], self.x , self.y )
+	love.graphics.setColor(255, 255, 255, 255)
 end
 
 function player:moveright(move)
@@ -109,6 +120,9 @@ end
 function player:jump(shortHop)
 	if not self.jumping and not shortHop then
 		self.speedy = -160
+
+		jumpsound:play()
+
 		self.jumping = true
 	else
 		if shortHop then
@@ -184,8 +198,17 @@ function player:rightCollide(name, data)
 	end
 end
 
+function player:passiveCollide(name, data)
+	if name == "tile" then
+		if data.id then
+			self:die()
+		end
+	end
+end
+
 function player:die(win)
-	table.insert(objects["digits"], death:new(self.x + self.width / 2 - 4, self.y - 3))
+	table.insert(objects["playerdeath"], death:new(self.x, self.y))
+
 	self.remove = true
 
 	--obviously
@@ -197,37 +220,27 @@ end
 death = class("death")
 
 function death:init(x, y)
-	local deathn = {}
-	local values = {"0", "1"}
-	for k = 1, 6 do
-		deathn[k] = { x = x , y  = y + (k - 1) * 6 , value = values[love.math.random(#values)], speed = (math.random() * 2 - 1) * 40, timer = 0 }
-	end
-
 	self.x = x
 	self.y = y 
 	self.width = 16
 	self.height = 16
+	self.timer = 0
+	self.quadi = 1
 
 	gameoversnd:play()
 end
 
 function death:update(dt)
-	for k = 1, #deathn do
-		deathn[k].x = deathn[k].x + deathn[k].speed * dt
-
-		if deathn[k].timer < 0.8 then
-			deathn[k].timer = deathn[k].timer + dt
-			deathn[k].y = deathn[k].y - 30 * dt
-		else
-			deathn[k].y = deathn[k].y + 30 * dt
-		end
+	if self.quadi < 8 then
+		self.timer = self.timer + 8 * dt
+		self.quadi = math.floor(self.timer % 8) + 1
+	else
+		self.remove = true
 	end
 end
 
 function death:draw()
-	love.graphics.setFont(consoleFont)
-	for k = 1, #deathn do
-		love.graphics.setColor(0, 150, 0)
-		love.graphics.print(deathn[k].value, deathn[k].x , deathn[k].y )
+	for y = 0, math.floor(self.y) do
+		love.graphics.draw(deathimg, deathquads[self.quadi], self.x, self.y - (y - 1) * 16)
 	end
 end

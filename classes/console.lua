@@ -30,7 +30,7 @@ function console:update(dt)
 			local s = self.string
 			self.i = self.i + 1
 			self.drawstring = self.drawstring .. s:sub(self.i, self.i)
-
+			consolesound:play()
 			self.timer = 0
 		end
 	else
