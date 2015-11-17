@@ -64,6 +64,6 @@ end
 
 function firewall:draw()
 	love.graphics.setColor(255, 255, 255, 255 * self.fadeValue)
-	love.graphics.draw(firewallimg, firewallquads[self.quadi], self.x, self.y, 0, scale, scale)
+	love.graphics.draw(firewallimg, firewallquads[self.quadi], self.x, self.y)
 	love.graphics.setColor(255, 255, 255, 255)
 end

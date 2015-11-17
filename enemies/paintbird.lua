@@ -22,17 +22,10 @@ function paintbird:init(x, y)
 		["player"] = true
 	}
 
-	self.graphic = 
-	{
-		["left"] = {love.graphics.newImage("enemies/imageFile.png"), love.graphics.newImage("enemies/imageFile2.png")},
-		["right"] = {love.graphics.newImage("enemies/imageFileFlip.png"), love.graphics.newImage("enemies/imageFileFlip2.png")}
-	}
+	self.graphic = paintbirdimg
 
-	self.quads = {}
-
-	for k = 1, 3 do
-		self.quads[k] = love.graphics.newQuad((k - 1) * 19, 0, 18, 13, self.graphic["left"][1]:getWidth(), self.graphic["left"][1]:getHeight())
-	end
+	self.quads = paintbirdquads
+	
 
 	self.quadi = 1
 
@@ -46,31 +39,35 @@ function paintbird:init(x, y)
 
 	self.dropTimer = math.random(6)
 
-	self.color = {}
+	self.color = {255, 255, 255}
+
+	self.extensions = {t = "image", ext = {".png", ".bmp", ".jpg", ".gif", ".tif", ".tga"}}
 end
 
 function paintbird:update(dt)
-	if self.timer < self.maxTimer then
-		self.timer = self.timer + dt
-	else
-		self.currentColor = self.toColor
-		self.toColor = {math.random(255), math.random(255), math.random(255)}
-		self.timer = 0
+	if not self.stomped then
+		if self.timer < self.maxTimer then
+			self.timer = self.timer + dt
+		else
+			self.currentColor = self.toColor
+			self.toColor = {math.random(255), math.random(255), math.random(255)}
+			self.timer = 0
+		end
+
+		if self.dropTimer > 0 then
+			self.dropTimer = self.dropTimer - dt
+		else
+			table.insert(objects["paintdrop"], paintdrop:new(self.x + (self.width) - 2, self.y + self.height, self, 0, 0, true, nil, nil, true))
+			self.dropTimer = math.random(6)
+		end
+
+		self.hopTimer = self.hopTimer + 2 * dt
+
+		self.animationTimer = self.animationTimer + 8 * dt
+		self.quadi = math.floor(self.animationTimer % 3) + 1
+
+		self.color = colorfade(self.timer, self.maxTimer, self.currentColor, self.toColor)
 	end
-
-	if self.dropTimer > 0 then
-		self.dropTimer = self.dropTimer - dt
-	else
-		table.insert(objects["paintdrop"], paintdrop:new(self.x + (self.width) - 2, self.y + self.height, self, 0, 0, true))
-		self.dropTimer = math.random(6)
-	end
-
-	self.hopTimer = self.hopTimer + 2 * dt
-
-	self.animationTimer = self.animationTimer + 8 * dt
-	self.quadi = math.floor(self.animationTimer % 3) + 1
-
-	self.color = colorfade(self.timer, self.maxTimer, self.currentColor, self.toColor)
 end
 
 function paintbird:draw()
@@ -81,10 +78,22 @@ function paintbird:draw()
 	love.graphics.draw(self.graphic[self.direction][2], self.quads[self.quadi], self.x, self.y + math.sin(self.hopTimer) * 4)
 end
 
+function paintbird:stomp()
+	self.active = true
+	self.gravity = 300
+end
+
 function paintbird:leftCollide(name, data)
 	if name == "tile" then
 		self.speedx = math.random(60, 100)
 		self.direction = "right"
+		return false
+	end
+
+	if name == "player" then
+		if not data.dodging then
+			data:takeDamage(-1)
+		end
 		return false
 	end
 end
@@ -95,16 +104,43 @@ function paintbird:rightCollide(name, data)
 		self.direction = "left"
 		return false
 	end
+
+	if name == "player" then
+		if not data.dodging then
+			data:takeDamage(-1)
+		end
+		return false
+	end
+end
+
+function paintbird:downCollide(name, data)
+	if name == "tile" then
+		self.remove = true
+		game_Explode(self, nil, self.color)
+	end
+
+	if name == "player" then
+		if not data.dodging then
+			data:takeDamage(-1)
+		end
+		return false
+	end
+end
+
+function paintbird:upCollide(name, data)
+	if name == "player" then
+		return false
+	end
 end
 
 paintdrop = class("paintdrop")
 
-function paintdrop:init(x, y, parent, speedx, speedy, spawnachild)
+function paintdrop:init(x, y, parent, speedx, speedy, spawnachild, width, height, color, doDamage)
 	self.x = x 
 	self.y = y
 
-	self.width = 4
-	self.height = 4
+	self.width = width or 4
+	self.height = height or 4
 
 	self.active = true
 
@@ -121,12 +157,27 @@ function paintdrop:init(x, y, parent, speedx, speedy, spawnachild)
 
 	self.spawnachild = spawnachild
 
+	self.color = color or {255, 255, 255}
 	self.parent = parent
+
+	local damage = -1
+	if not doDamage then
+		damage = 0
+	end
+	self.damage = damage
 end
 
 function paintdrop:draw()
-	love.graphics.setColor(unpack(self.parent.color))
-	love.graphics.rectangle("fill", self.x, self.y, 4, 4)
+	local color = {255, 255, 255}
+	if self.parent then
+		color = self.parent.color
+	else
+		color = self.color
+	end
+
+	love.graphics.setColor(unpack(color))
+	love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
+	love.graphics.setColor(255, 255, 255)
 end
 
 function paintdrop:downCollide(name, data)
@@ -136,5 +187,43 @@ function paintdrop:downCollide(name, data)
 		table.insert(objects["paintdrop"], paintdrop:new(self.x, self.y, self.parent, 60, -60, false))
 	end
 
-	self.remove = true
+	if name == "player" then
+		if not data.dodging then
+			data:takeDamage(self.damage)
+			self.remove = true
+		end
+		return false
+	else
+		self.remove = true
+	end
+end
+
+function paintdrop:rightCollide(name, data)
+	if name == "player" then
+		if not data.dodging then
+			data:takeDamage(self.damage)
+			self.remove = true
+		end
+		return false
+	end
+end
+
+function paintdrop:upCollide(name, data)
+	if name == "player" then
+		if not data.dodging then
+			data:takeDamage(self.damage)
+			self.remove = true
+		end
+		return false
+	end
+end
+
+function paintdrop:leftCollide(name, data)
+	if name == "player" then
+		if not data.dodging then
+			data:takeDamage(self.damage)
+			self.remove = true
+		end
+		return false
+	end
 end

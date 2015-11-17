@@ -84,12 +84,12 @@ function checkCollision(objTable, obj2Table, objData, objName, obj2Name, dt)
 				elseif aabb(objData.x + objData.speedx * dt, objData.y, objData.width, objData.height, obj2Data.x, obj2Data.y, obj2Data.width, obj2Data.height) then
 					hor = horizontalCollide(objName, objData, obj2Name, obj2Data)
 				else
-					--dat bug doe
-					--[[if (objData.speedy - objData.gravity * dt) < (objData.speedx) then
+					--dat bug doe, some sort of dianal collision thing. gg Maurice.
+					if (objData.speedy - objData.gravity * dt) > (objData.speedx) then
 						ver = verticalCollide(objName, objData, obj2Name, obj2Data)
 					else
 						hor = horizontalCollide(objName, objData, obj2Name, obj2Data)
-					end]]
+					end
 				end
 
 			end

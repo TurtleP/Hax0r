@@ -1,5 +1,7 @@
 class = require 'libraries/middleclass'
 
+require 'data'
+
 require 'classes/console'
 require 'classes/pausemenu'
 require 'classes/player'
@@ -8,6 +10,8 @@ require 'classes/antivirus'
 require 'classes/bitenemy'
 require 'classes/firewall'
 require 'classes/proxy'
+require 'classes/map'
+require 'classes/roomsign'
 
 require 'libraries/event'
 require 'libraries/physics'
@@ -17,20 +21,43 @@ require 'states/game'
 require 'states/title'
 require 'states/win'
 require 'states/credits'
-
+require 'states/intro'
+require 'states/gameover'
 
 require 'enemies/music'
 require 'enemies/paintbird'
+require 'enemies/executioner'
+require 'enemies/sudo'
+require 'enemies/webexplore'
+require 'enemies/document'
+
+--[[
+	So as long as you stick to the lisence I will not try to hunt you down. That means you CAN modify the game but CANNOT reditribute the game as profit.
+	Furthermore, you must give me credit (TurtleP aka Jeremy Postelnek) for any modifications you make of said game. Not sure why you'd be in this file,
+	but who knows since you probably want to look at this code. It's not the best, trust me on that.
+
+	Obligatory hidden webm's from Jeviny:
+	https://u.pomf.io/fpqedd.webm
+	https://u.pomf.io/arwmbp.webm
+
+	You're welcome Jeviny.
+--]]
 
 function love.load()
 
-	love.window.setMode(400, 240)
+	--love.window.setMode(400, 240)
+	--_DEBUGCOLLS = true
+
 	controls = {}
 
 	controls["right"] = "cpadright"
 	controls["left"] = "cpadleft"
+	controls["up"] = "cpadup"
+	controls["down"] = "cpaddown"
+
 	controls["jump"] = "a"
 	controls["pause"] = "start"
+	controls["dodge"] = {"lbutton", "rbutton"}
 
 	homebrewMode = true
 
@@ -40,20 +67,13 @@ function love.load()
 		love.window.setTitle("Hax0r?")
 		love.window.setIcon(love.image.newImageData("graphics/icon.png"))
 
-		function love.graphics.setScreen(s) 
-
-		end
-
-		controls["right"] = "d"
-		controls["left"] = "a"
-		controls["jump"] = " "
-		controls["pause"] = "escape"
-
 		homebrewMode = false
+		math.random = love.math.random
+
+		require 'libraries/3ds'
+	else
+		math.randomseed(os.time())
 	end
-
-	math.randomseed(os.time())
-
 
 	titleimg = love.graphics.newImage("graphics/title.png")
 
@@ -61,15 +81,13 @@ function love.load()
 
 	UIIcons =
 	{
-		["linux"] = love.graphics.newImage("graphics/interface/bottomlogo.png"),
 		["battery"] = {love.graphics.newImage("graphics/3ds/battery.png"), love.graphics.newImage("graphics/3ds/charging.png")},
-		["health"] = {},
-		["background"] = love.graphics.newImage("graphics/interface/background.png"),
+		["health"] = {["img"] = love.graphics.newImage("graphics/interface/health.png"), ["quads"] = {}},
 		["power"] = love.graphics.newImage("graphics/interface/power.png")
 	}
 
-	for k = 1, 5 do
-		UIIcons["health"][k] = love.graphics.newImage("graphics/interface/health" .. k .. ".png")
+	for k = 1, 6 do
+		UIIcons["health"]["quads"][k] = love.graphics.newQuad((k - 1) * 20, 0, 19, 16, UIIcons["health"]["img"]:getWidth(), 16)
 	end
 
 	playerimg = love.graphics.newImage("graphics/player-new.png")
@@ -92,24 +110,93 @@ function love.load()
 
 	deathimg = love.graphics.newImage("graphics/death.png")
 	deathquads = {}
-	for k = 1, 9 do
+	for k = 1, 13 do
 		deathquads[k] = love.graphics.newQuad((k - 1) * 17, 0, 16, 16, deathimg:getWidth(), deathimg:getHeight())
 	end
 
 	waterbaseimg = love.graphics.newImage("graphics/seatile.png")
 
-	--other
-	backgroundFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 16)
-	consoleFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 16)
+	executionerimg = {love.graphics.newImage("enemies/executioner.png"), love.graphics.newImage("enemies/executionerFlip.png")}
+	executionerquads = {}
+	for k = 1, 5 do
+		executionerquads[k] = love.graphics.newQuad((k - 1) * 22, 0, 21, 29, executionerimg[1]:getWidth(), executionerimg[1]:getHeight())
+	end
+	
+	musicimg = love.graphics.newImage("enemies/musicFile.png")
+	musicquads = {}
+	for k = 1, 3 do
+		musicquads[k] = love.graphics.newQuad((k - 1) * 17, 0, 16, 13, musicimg:getWidth(), musicimg:getHeight())
+	end
+
+	noteimg = love.graphics.newImage("enemies/notes.png")
+	notequads = {}
+	for k = 1, 2 do
+		notequads[k] = love.graphics.newQuad((k - 1) * 7, 0, 6, 8, noteimg:getWidth(), noteimg:getHeight())
+	end
+
+	paintbirdimg = 
+	{
+		["left"] = {love.graphics.newImage("enemies/imageFile.png"), love.graphics.newImage("enemies/imageFile2.png")},
+		["right"] = {love.graphics.newImage("enemies/imageFileFlip.png"), love.graphics.newImage("enemies/imageFileFlip2.png")}
+	}
+	paintbirdquads = {}
+	for k = 1, 3 do
+		paintbirdquads[k] = love.graphics.newQuad((k - 1) * 19, 0, 18, 13, paintbirdimg["left"][1]:getWidth(), paintbirdimg["left"][1]:getHeight())
+	end
+
+	background = {}
+	for k = 1, 8 do
+		background[k] = love.graphics.newImage("graphics/background/" .. k .. ".png")
+	end
+
+	sudoimg = love.graphics.newImage("enemies/sudo.png")
+	sudoquads = {}
+	for k = 1, 8 do
+		sudoquads[k] = love.graphics.newQuad((k - 1) * 15, 0, 14, 14, sudoimg:getWidth(), sudoimg:getHeight())
+	end
+
+	smokeimg = love.graphics.newImage("enemies/smoke.png")
+	smokequads = {}
+	for k = 1, 3 do
+		smokequads[k] = love.graphics.newQuad((k - 1) * 10, 0, 9, 9, smokeimg:getWidth(), smokeimg:getHeight())
+	end
+
+	exploreimg = love.graphics.newImage("enemies/ie.png")
+	explorequads = {}
+	for x = 1, 2 do
+		explorequads[x] = {}
+		for y = 1, 2 do
+			explorequads[x][y] = love.graphics.newQuad((x - 1) * 17, (y - 1) * 17, 16, 16, exploreimg:getWidth(), exploreimg:getHeight())
+		end
+	end
+
+	documentimg = love.graphics.newImage("enemies/document.png")
+	documentquads = {}
+	for k = 1, 4 do
+		documentquads[k] = love.graphics.newQuad((k - 1) * 16, 0, 15, 16, documentimg:getWidth(), documentimg:getHeight())
+	end
+
+	dockimg = love.graphics.newImage("graphics/dockicons.png")
+	dockquads = {}
+	for k = 1, 4 do
+		dockquads[k] = love.graphics.newQuad((k - 1) * 33, 0, 32, 32, dockimg:getWidth(), dockimg:getHeight())
+	end
+
+	dockbottomimg = love.graphics.newImage("graphics/dockiconbottom.png")
+	appsicon = love.graphics.newImage("graphics/ds.png")
+	
+	bannerimg = love.graphics.newImage("graphics/bannerbig.png")
+
+	gameoverimg = love.graphics.newImage("graphics/gameover.png")
+	introimg = love.graphics.newImage("graphics/intro.png")
 
 	--maps
 	maps = {}
-	maps[1] = require "maps/1"
-	maps[2] = require "maps/2"
-	maps[3] = require "maps/3"
-	maps[4] = require "maps/4"
+	for k = 1, 7 do
+		maps[k] = {map = require("maps/" .. k), name = _MAPNAMES[k]}
+	end
 
-	maps[2].offsetX = (25 * 16)
+	--maps[5] = require "maps/testmap"
 
 --	maps[4] = require "maps/save"
 
@@ -125,23 +212,30 @@ function love.load()
 
 	gameoversnd = love.audio.newSource("audio/gameover.wav")
 
-	gameFunctions.changeState("title")
+	deathsnd = love.audio.newSource("audio/death.wav")
+	
+	--FONTS
+	--other
+	consoleFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 16)
+	introFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 32)
+
+	gameFunctions.changeState("intro")
 end
 
 function love.update(dt)
-	--if dt > 0 then
-		dt = math.min(1/60, dt)
-
-		if _G[state .. "_update"] then
-			_G[state .. "_update"](dt)
-		end
---	end
+	dt = math.min(1/60, dt)
+	if _G[state .. "_update"] then
+		_G[state .. "_update"](dt)
+	end
 end
 
 function love.draw()
 	if _G[state .. "_draw"] then
 		_G[state .. "_draw"]()
 	end
+	
+	love.graphics.setColor(0, 0, 0)
+	love.graphics.print(love.timer.getFPS(), 0, love.graphics.getHeight() - 16)
 end
 
 function love.keypressed(key)
@@ -166,23 +260,33 @@ gameFunctions = {}
 function gameFunctions.changeState(newState, ...)
 	local arg = {...}
 
-	state = newState
-
-	if _G[state .. "_init"] then
-		_G[state .. "_init"](unpack(arg))
+	if _G[newState .. "_init"] then
+		_G[newState .. "_init"](unpack(arg))
 	end
+
+	state = newState
 end
 
-function gameFunctions.getWidth()
-	return love.graphics.getWidth()
+function gameFunctions.getWidth(tile)
+	local g = love.graphics.getWidth()
+	
+	if tile then
+		return g / 16
+	end
+	return g
 end
 
-function gameFunctions.getHeight()
-	return love.graphics.getHeight()
+function gameFunctions.getHeight(tile)
+	local g = love.graphics.getHeight()
+	
+	if tile then
+		return g / 16
+	end
+	return g
 end
 
 function love.focus(f)
 	if not f and not gameover then
-		paused = true
+		--paused = true
 	end
 end

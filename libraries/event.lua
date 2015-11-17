@@ -24,7 +24,9 @@ function eventsystem:update(dt)
 			elseif v.cmd == "spawnplayer" then
 				objects["player"][1] = player:new(v.args[1], v.args[2], true)
 			elseif v.cmd == "firewallfree" then
-				objects["firewall"][1]:fade()
+				if objects["firewall"][1] then
+					objects["firewall"][1]:fade()
+				end
 			end
 		end
 	end
@@ -50,7 +52,7 @@ function eventsystem:onMapLoad(map)
 
 		eventSystem:queue("spawnplayer", {playerX, playerY})
 		eventSystem:queue("wait", 1)
-		eventSystem:queue("console", {"Good. Now my monsterous virus .. wait .. is this a PowerPC 95?"})
+		eventSystem:queue("console", {"Good. Now my monsterous virus .. wait is this a PowerPC 95?"})
 
 		eventSystem:queue("wait", 8)
 		eventSystem:queue("console", {"Whatever. Using you, I can stream data back to me."})

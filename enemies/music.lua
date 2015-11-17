@@ -15,16 +15,14 @@ function audioblaster:init(x, y)
 
 	self.mask =
 	{
-		["player"] = true,
-		["tile"] = true
+		["tile"] = true,
+		["player"] = true
 	}
 
-	self.graphic = love.graphics.newImage("enemies/musicFile.png")
-	self.quads = {}
+	self.graphic = musicimg
+	self.quads = musicquads
 
-	for k = 1, 3 do
-		self.quads[k] = love.graphics.newQuad((k - 1) * 17, 0, 16, 13, self.graphic:getWidth(), self.graphic:getHeight())
-	end
+	
 
 	self.timer = 0
 	self.quadi = 1
@@ -33,6 +31,8 @@ function audioblaster:init(x, y)
 	self.shakeValue = 0
 
 	self.insertTimer = 0
+
+	self.extensions = {t = "audio", ext = {".ogg", ".mp3", ".wav", ".flac", ".mp2"}}
 end
 
 function audioblaster:update(dt)
@@ -62,6 +62,39 @@ end
 
 function audioblaster:draw()
 	love.graphics.draw(self.graphic, self.quads[self.quadi], self.x + math.cos(self.shakeValue * 16), self.y)
+end
+
+function audioblaster:upCollide(name, data)
+	if name == "player" then
+		return false
+	end
+end
+
+function audioblaster:downCollide(name, data)
+	if name == "player" then
+		if not data.dodging then
+			data:takeDamage(-1)
+		end
+		return false
+	end
+end
+
+function audioblaster:rightCollide(name, data)
+	if name == "player" then
+		if not data.dodging then
+			data:takeDamage(-1)
+		end
+		return false
+	end
+end
+
+function audioblaster:leftCollide(name, data)
+	if name == "player" then
+		if not data.dodging then
+			data:takeDamage(-1)
+		end
+		return false
+	end
 end
 
 musicnote = class("musicnote")
@@ -95,12 +128,9 @@ function musicnote:init(x, y, i, dir)
 		self.speedx = 60
 	end
 
-	self.graphic = love.graphics.newImage("enemies/notes.png")
+	self.graphic = noteimg
 
-	self.quads = {}
-	for k = 1, 2 do
-		self.quads[k] = love.graphics.newQuad((k - 1) * 7, 0, 6, 8, self.graphic:getWidth(), self.graphic:getHeight())
-	end
+	self.quads = notequads
 end
 
 function musicnote:update(dt)
@@ -111,25 +141,41 @@ end
 
 function musicnote:upCollide(name, data)
 	if name == "player" then
-		self.remove = true
+		if not data.dodging then
+			data:takeDamage(-1)
+			self.remove = true
+		end
+		return false
 	end
 end
 
 function musicnote:downCollide(name, data)
 	if name == "player" then
-		self.remove = true
+		if not data.dodging then
+			data:takeDamage(-1)
+			self.remove = true
+		end
+		return false
 	end
 end
 
 function musicnote:rightCollide(name, data)
 	if name == "player" then
-		self.remove = true
+		if not data.dodging then
+			data:takeDamage(-1)
+			self.remove = true
+		end
+		return false
 	end
 end
 
 function musicnote:leftCollide(name, data)
 	if name == "player" then
-		self.remove = true
+		if not data.dodging then
+			data:takeDamage(-1)
+			self.remove = true
+		end
+		return false
 	end
 end
 
