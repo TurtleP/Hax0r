@@ -1,32 +1,40 @@
-function game_init()
+function game_init(loadSaveFile)
+	maps = {}
+	
+	for k = 1, 14 do
+		maps[k] = {map = require("maps/" .. k), name = _MAPNAMES[k]}
+	end
+	playerhealth = 5
+
 	eventSystem = eventsystem:new()
 
 	maplist = {}
 
 	currentMap = 1
-	maplist[1] = maps[currentMap]
-
-	local listCount = 2
-
-	while (listCount < 14) do
-		if #maps < 2 then
-			break
-		end
-		local rand = math.random(2, #maps)
-		maplist[listCount] = maps[rand]
-		table.remove(maps, rand)
-		listCount = listCount + 1
-	end
-
-	loadMap(currentMap)
 
 	score = 0
 
-	scoreTypes = {"KB", "MB", "GB"}
-	scorei = 1
+	if not loadSaveFile then
+		maplist[1] = {maps[currentMap], 1}
 
-	combo = 0
-	combotimeout = 0
+		local listCount = 2
+
+		while (listCount < 14) do
+			if #maps < 2 then
+				break
+			end
+			local rand = math.random(2, #maps)
+			maplist[listCount] = {maps[rand], rand}
+			table.remove(maps, rand)
+			listCount = listCount + 1
+		end
+	else
+		saveGame(true)
+	end
+
+
+	loadMap(currentMap)
+
 	paused = false
 
 	mapscrollx = 0
@@ -37,16 +45,20 @@ function game_init()
 	gameover = false
 	mapFadeOut = false
 
-	backgroundi = 1
-	backgroundtimer = 0
-
 	terminalstrings = {}
 
 	datablinktimer = 0
 	pointsAdd = false
 	pointsAddTimer = 0
 	scoreAdd = 0
-	scoreDivisor = 1
+
+	savingGame = false
+	bufferquadi = 1
+	buffertimer = 0
+	savetimer = 0
+	savei = 0
+	
+	love.graphics.setBackgroundColor(0, 80, 80)
 end
 
 function fixTerminalData(tofixtext, maxLength)
@@ -73,7 +85,15 @@ function game_update(dt)
 		return
 	end
 
+	if not objects["boss"][1] then
+		if not titlemusic:isPlaying() then
+			titlemusic:play()
+		end
+	end
+
 	eventSystem:update(dt)
+
+	physicsupdate(dt)
 
 	for k, v in pairs(objects) do
 		for j, w in pairs(v) do
@@ -109,14 +129,23 @@ function game_update(dt)
 		end
 	end
 
-	--hacky shit but whatever
-	if not objects["player"][1] then
-		if not bgmstart:isPlaying() then
-			bgmstart:play()
+	if savingGame then
+		buffertimer = math.min(buffertimer + 8*dt)
+		bufferquadi = math.floor(buffertimer%16)+1
+
+		if savetimer < 1 then
+			savetimer = savetimer + dt
+		else
+			savetimer = 0
+			savei = savei + 1
 		end
-	else
-		if not bgm:isPlaying() then
-			bgm:play()
+
+		if savei == 10 then
+			saveGame(false, true)
+			
+			savetimer = 0
+			savei = 0
+			savingGame = false
 		end
 	end
 
@@ -126,30 +155,17 @@ function game_update(dt)
 	end
 
 	if pointsAdd then
-		if math.abs((scoreAdd / scoreDivisor) - (score / scoreDivisor)) == 0 then
+		if math.abs(scoreAdd - score) == 0 then
 			pointsAdd = false
-			scoreToBe = 0
 		end
 
 		if pointsAddTimer < 0.01 then
 			pointsAddTimer = pointsAddTimer + dt
 		else
-			if math.abs((scoreAdd / scoreDivisor) - (score / scoreDivisor)) ~= 0 then
-				score = score + 1 / scoreDivisor
-				if score > 1024 then
-					scorei = scorei + 1
-
-					if scorei == 2 then
-						scoreDivisor = 1024
-					elseif scorei == 3 then
-						scoreDivisor = (1024 * 1024)
-					end
-
-					score = 1
-				end
+			if math.abs(scoreAdd - score) ~= 0 then
+				score = score + 1
 			else
 				pointsAdd = false
-				scoreToBe = 0
 			end
 			pointsAddTimer = 0
 		end
@@ -172,8 +188,6 @@ function game_update(dt)
 		end
 	end
 
-	physicsupdate(dt)
-
 	if roomSign then
 		roomSign:update(dt)
 	end
@@ -191,6 +205,21 @@ function game_draw()
 				w:draw()
 			end
 		end	
+	end
+
+	love.graphics.setColor(255, 255, 255, 255)
+	if savingGame then
+		love.graphics.draw(bufferimg, bufferquads[bufferquadi], gameFunctions.getWidth() / 2 - 72, gameFunctions.getHeight() / 2 - 20)
+
+		love.graphics.draw(saveimg, (gameFunctions.getWidth() / 2 - 72) + 44, (gameFunctions.getHeight() / 2 - 20) + 20 - 8)
+
+		love.graphics.setColor(9, 36, 105)
+		for k = 1, math.min(10, savei) do
+			love.graphics.rectangle("fill", (gameFunctions.getWidth() / 2 - 72) + 46 + (k - 1) * 10, ((gameFunctions.getHeight() / 2 - 20) + 20 - 8) + 2, 8, 12)
+		end
+
+		love.graphics.setColor(0, 0, 0)
+		love.graphics.print("Saving..", (gameFunctions.getWidth() / 2 - 72) + 46, ((gameFunctions.getHeight() / 2 - 20) + 20 - 8) - 18)
 	end
 	
 	love.graphics.setFont(consoleFont)
@@ -273,7 +302,8 @@ function game_draw()
 
 		love.graphics.draw(UIIcons["power"], gameFunctions.getWidth() - 18, 1)
 
-		local cmd = "user@H@x0rPC:~$ Infected: " .. round(score, 2) .. scoreTypes[scorei] .. "/4.0 GB"
+		local scoreType = getScoreType(score)
+		local cmd = "user@H@x0rPC:~$ Infected: " .. round(convert(score, scoreType), 2) .. scoreType .. "/48MB"
 		love.graphics.print(cmd, 0, 20)
 
 		love.graphics.setColor(255, 255, 255, 255 * math.sin(datablinktimer))
@@ -311,7 +341,17 @@ function game_keypressed(key)
 		--pauseMenu:keypressed(key)
 	end
 
-	if not objects["player"][1] then
+	if key == "select" then
+		savingGame = true
+	end
+
+	if consoles[1] then
+		if key == "x" then
+			consoles[1]:keydown()
+		end
+	end
+
+	if not objects["player"][1] or _LOCKPLAYER then
 		return
 	end
 
@@ -328,10 +368,6 @@ function game_keypressed(key)
 	elseif key == controls["dodge"][1] or key == controls["dodge"][2] then
 		objects["player"][1]:dodge()
 	end
-
-	if key == "`" then
-		_DEBUGCOLLS = not _DEBUGCOLLS
-	end
 end
 
 function game_mousepressed(x, y, button)
@@ -341,6 +377,19 @@ function game_mousepressed(x, y, button)
 end
 
 function game_keyreleased(key)
+	
+	if key == "select" then
+		savingGame = false
+		savetimer = 0
+		savei = 0
+	end
+
+	if consoles[1] then
+		if key == "x" then
+			consoles[1]:keyup()
+		end
+	end
+
 	if not objects["player"][1] then
 		return
 	end
@@ -397,15 +446,17 @@ function game_Explode(self, other, color)
 	local min, max
 
 	if t == "system" then
-		min, max = 60, 160
+		min, max = 364, 420
 	elseif t == "image" then
-		min, max = 10, 20
+		min, max = 34, 40
 	elseif t == "audio" then
-		min, max = 100, 200
+		min, max = 634, 706
 	elseif t == "executable" then
-		min, max = 1024, 1524
+		min, max = 1524, 1620
 	elseif t == "web document" then
-		min, max = 15, 45
+		min, max = 40, 50
+	elseif t == "document" then
+		min, max = 140, 160
 	end
 
 	local objData = math.random(min, max)
@@ -417,6 +468,18 @@ function game_Explode(self, other, color)
 
 	for i, v in pairs(str) do
 		table.insert(terminalstrings, v)
+	end
+
+	print(#terminalstrings)
+
+	if #terminalstrings > 3 then
+		table.remove(terminalstrings, 1)
+	end
+
+	if objects["player"][1].health < 5 then
+		if math.random(100) < 30 then
+			table.insert(objects["health"], healthitem:new(obj.x + obj.width / 2, obj.y))
+		end
 	end
 end
 
@@ -444,9 +507,20 @@ function loadMap(mapn)
 
 	objects["document"] = {}
 
+	objects["health"] = {}
+
+	objects["boss"] = {}
+	
+	objects["barrier"] = {}
+
 	consoles = {}
 	
-	map = maplist[mapn].map
+	if not maplist[mapn] then
+		gameFunctions.changeState("gameover")
+		return
+	end
+
+	map = maplist[mapn][1].map
 	currentMap = mapn
 
 	makeTiles(map)
@@ -461,8 +535,6 @@ function loadMap(mapn)
 				table.insert(objects["firewall"], firewall:new((x - 1) * 16, (y - 1) * 16))
 			elseif map[y][x] == 4 then
 				table.insert(objects["audioblaster"], audioblaster:new((x - 1) * 16, (y - 1) * 16))
-			elseif map[y][x] == 7 then
-				--save point
 			elseif map[y][x] == 8 then
 				table.insert(objects["paintbird"], paintbird:new((x - 1) * 16 - 2, (y - 1) * 16 + 3))
 			elseif map[y][x] == 9 then
@@ -481,9 +553,14 @@ function loadMap(mapn)
 		objects["player"][1] = player:new(playerX, playerY, false, playerhealth)
 	end
 
-	roomSign = roomsign:new(maplist[mapn].name)
+	roomSign = roomsign:new(maplist[mapn][1].name)
 
-	eventsystem:onMapLoad(currentMap)
+	if mapScripts[currentScript] then
+		eventSystem:decrypt(mapScripts[currentScript])
+	end
+
+	objects["barrier"][1] = barrier:new(0, -16, 400, 16)
+	objects["barrier"][2] = barrier:new(-16, 0, 16, 240)
 end
 
 function makeTiles(mapData)
@@ -585,62 +662,69 @@ function makeTiles(mapData)
 	end
 end
 
+function saveGame(load, temp)
+	local path = "sdmc:/3ds/Hax0r/save.txt"
+	if not load then
+		local file = io.open(path, "w")
+
+		local status = 1
+
+		if file then
+			local mapValues = "return {temp = " .. tostring(temp) .. ", maplist = {"
+			for k = 1, #maplist do
+				mapValues = mapValues .. maplist[k][2] .. ","
+			end
+			mapValues = mapValues .. "}, mapnum =" .. currentMap .. ", score = " .. score .. ", currentScript = " .. currentScript .."}"
+
+			file:write(mapValues)
+			file:flush()
+			file:close()
+
+			savesnd:play()
+		else
+			status = 0
+			blipsnd:play()
+		end
+
+		eventSystem:queue("terminaladd", "VIRUS [H@x0r] saved to RAM with status: " .. status)
+	else
+		local file = io.open(path, "r")
+
+		local splitSemi = loadstring(file:read())()
+
+		if not splitSemi then
+			os.remove(path)
+			return
+		end
+
+		local pass = false
+		for k, v in pairs(splitSemi) do
+			if k == "maplist" then
+				for j = 1, #v do
+					maplist[j] = {maps[tonumber(v[j])], tonumber(v[j])}
+				end
+			elseif k == "mapnum" then
+				currentMap = tonumber(v)
+			elseif k == "score" then
+				score = tonumber(v)
+			else
+				if k == "temp" then
+					pass = true
+				end
+			end
+		end
+
+		if #maplist > 0 and score and currentMap then
+			if pass then
+				os.remove(path)
+			end
+		end
+	end
+end
+
 function getEnemyCount()
 	local o = objects
 	local audio, exe, doc, sys, img, web = o["audioblaster"], o["executioner"], o["document"], o["sudo"], o["paintbird"], o["webexplorer"]
 
 	return (#audio + #exe + #doc + #sys + #img + #web)
-end
-
-function consoleDelay(t, s, c, f)
-	table.insert(timers["console"], newTimer(t, function()
-		objects["console"][1] = newConsole(s, c, f)
-	end))
-end
-
-function newTimer(t, f, stopAtMax)
-	local timerthing = {}
-
-	timerthing.maxtime = t
-	timerthing.func = f
-	timerthing.time = 0
-	timerthing.stopAtMax = stopAtMax
-
-	timerthing.stop = false
-
-	function timerthing:update(dt)
-		if self.time < self.maxtime then
-			self.time = self.time + dt
-		else
-			if not self.stop then
-				self.func()
-				self.remove = true
-				self.stop = true
-			end
-		end
-	end
-
-	return timerthing
-end
-
-function newRepeatTimer(t, f)
-	local timerthing = {}
-
-	timerthing.maxtime = t
-	timerthing.func = f
-	timerthing.time = 0
-	timerthing.stopAtMax = stopAtMax
-
-	timerthing.stop = false
-
-	function timerthing:update(dt)
-		if self.time < self.maxtime then
-			self.time = self.time + dt
-		else
-			self.func()
-			self.time = 0
-		end
-	end
-
-	return timerthing
 end

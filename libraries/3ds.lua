@@ -59,7 +59,7 @@ config["y"] = "p"
 
 --Start & Select
 config["start"] = "return"
-config["select"] = "."
+config["select"] = "lshift"
 
 
 --[[Library Code:]]
@@ -161,6 +161,17 @@ end
 function love.window.getDisplayCount() return 2 end
 --function love.system.getOS() return "3ds" end
 
+local oldgetMouseX = love.mouse.getX
+function love.mouse.getX()
+	return oldgetMouseX() - 40
+end
+
+
+local oldgetMouseY = love.mouse.getY
+function love.mouse.getY()
+	return oldgetMouseY() - 240
+end
+
 --Callbacks
 if love.mousepressed then
 	local clamp = function(n,min,max) 
@@ -175,6 +186,25 @@ if love.mousepressed then
 
 	local oldmousepress = love.mousepressed
 	function love.mousepressed(x,y,b)
+		if b == "l" then
+			oldmousepress(clamp(x-40,0,320),clamp(y-240,0,240),"l")
+		end
+	end
+end
+
+if love.mousereleased then
+	local clamp = function(n,min,max) 
+		if n < min then 
+			return min 
+		elseif n > max then 
+			return max 
+		else 
+			return n 
+		end 
+	end
+
+	local oldmousepress = love.mousereleased
+	function love.mousereleased(x,y,b)
 		if b == "l" then
 			oldmousepress(clamp(x-40,0,320),clamp(y-240,0,240),"l")
 		end

@@ -95,7 +95,8 @@ function player:init(x, y, fadein, health)
 		["webexplorer"] = true,
 		["notes"] = true,
 		["document"] = true,
-		["executioner"] = true
+		["executioner"] = true,
+		["barrier"] = true
 	}
 end
 
@@ -176,9 +177,6 @@ function player:update(dt)
 
 	if self.x > 400 then
 		mapFadeOut = true
-	end
-	if self.jumping == false then
-		self.jumping = true
 	end
 
 	for k, v in pairs(self.dashes) do
@@ -320,7 +318,9 @@ end
 
 function player:downCollide(name, data)
 	if self.dodging then
-		return false
+		if name ~= "tile" then
+			return false
+		end
 	end
 	
 	if name == "audioblaster" then
@@ -373,28 +373,28 @@ function player:upCollide(name, data)
 end
 
 function player:leftCollide(name, data)
+	if self.enemyList[name] then
+		return false
+	end
+
 	if name == "tile" then
 		if self.speedx < 0 then
 			self.speedy = -60
 			self.jumping = "left"
 		end
 	end
-
-	if self.enemyList[name] then
-		return false
-	end
 end
 
 function player:rightCollide(name, data)
+	if self.enemyList[name] then
+		return false
+	end
+	
 	if name == "tile" then
 		if self.speedx > 0 then
 			self.speedy = -60
 			self.jumping = "right"
 		end
-	end
-
-	if self.enemyList[name] then
-		return false
 	end
 end
 
@@ -409,20 +409,26 @@ function player:passiveCollide(name, data)
 end
 
 function player:takeDamage(value)
-	if not self.dead then
+	if not self.dead and not _LOCKPLAYER then
 		if not self.invincible then
 			if self.dodging then
 				return
 			end
 
-			self.health = math.max(self.health + value, 0)
+			self.health = self.health + value
 		
 			if value < 0 then
 				self.invincible = true
 			end
-
-			playerhealth = self.health
 		end
+
+		if value > 0 then
+			lifesnd:play()
+
+			self.health = self.health + value
+		end
+
+		playerhealth = self.health
 
 		if self.health == 0 then
 			self.quadi = 1

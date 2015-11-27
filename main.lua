@@ -12,6 +12,8 @@ require 'classes/firewall'
 require 'classes/proxy'
 require 'classes/map'
 require 'classes/roomsign'
+require 'classes/healthitem'
+require 'classes/barrier'
 
 require 'libraries/event'
 require 'libraries/physics'
@@ -30,6 +32,8 @@ require 'enemies/executioner'
 require 'enemies/sudo'
 require 'enemies/webexplore'
 require 'enemies/document'
+
+require 'classes/bitenemy'
 
 --[[
 	So as long as you stick to the lisence I will not try to hunt you down. That means you CAN modify the game but CANNOT reditribute the game as profit.
@@ -176,13 +180,9 @@ function love.load()
 		documentquads[k] = love.graphics.newQuad((k - 1) * 16, 0, 15, 16, documentimg:getWidth(), documentimg:getHeight())
 	end
 
-	dockimg = love.graphics.newImage("graphics/dockicons.png")
-	dockquads = {}
-	for k = 1, 4 do
-		dockquads[k] = love.graphics.newQuad((k - 1) * 33, 0, 32, 32, dockimg:getWidth(), dockimg:getHeight())
-	end
+	computerimg = love.graphics.newImage("graphics/computericon.png")
 
-	dockbottomimg = love.graphics.newImage("graphics/dockiconbottom.png")
+
 	appsicon = love.graphics.newImage("graphics/ds.png")
 	
 	bannerimg = love.graphics.newImage("graphics/bannerbig.png")
@@ -190,10 +190,35 @@ function love.load()
 	gameoverimg = love.graphics.newImage("graphics/gameover.png")
 	introimg = love.graphics.newImage("graphics/intro.png")
 
+	saveimg = love.graphics.newImage("graphics/savebar.png")
+
+	bufferimg = love.graphics.newImage("graphics/buffer.png")
+	bufferquads = {}
+	for y = 1, 2 do
+		for x = 1, 12 do
+			table.insert(bufferquads, love.graphics.newQuad((x - 1) * 40, (y - 1) * 40, 40, 40, bufferimg:getWidth(), bufferimg:getHeight()))
+		end
+	end
+
 	--maps
-	maps = {}
-	for k = 1, 7 do
-		maps[k] = {map = require("maps/" .. k), name = _MAPNAMES[k]}
+
+	local myDirectory = "sdmc:/3ds/Hax0r/game/maps/scripts"
+	local open = io.open
+	if not homebrewMode then
+		myDirectory = "maps/scripts"
+		open = love.filesystem.read
+	end
+
+	mapScripts = {}
+	for k = 1, 4 do
+		local f = open(myDirectory .. "/" .. k .. ".txt")
+		
+		if type(f) ~= "string" and f then
+			mapScripts[k] = f:read("*a")
+			f:close()
+		else
+			mapScripts[k] = f
+		end
 	end
 
 	--maps[5] = require "maps/testmap"
@@ -202,24 +227,196 @@ function love.load()
 
 	--audio
 	titlemusic = love.audio.newSource("audio/title.wav")
+	bossmusic = love.audio.newSource("audio/boss.wav")
 
 	consolesound = love.audio.newSource("audio/console.wav")
 	jumpsound = love.audio.newSource("audio/jump.wav")
 	playerspawn = love.audio.newSource("audio/playerspawn.wav")
 
-	bgmstart = love.audio.newSource("audio/bgm-start.wav")
-	bgm = love.audio.newSource("audio/bgm.wav")
-
 	gameoversnd = love.audio.newSource("audio/gameover.wav")
 
 	deathsnd = love.audio.newSource("audio/death.wav")
-	
+
+	savesnd = love.audio.newSource("audio/save.wav")
+	blipsnd = love.audio.newSource("audio/blip.wav")
+	lifesnd = love.audio.newSource("audio/addlife.wav")
+
 	--FONTS
 	--other
 	consoleFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 16)
 	introFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 32)
 
 	gameFunctions.changeState("intro")
+end
+
+function savelog(data)
+	local pcdata = os.date("!*t")
+	
+	local errFile = io.open("sdmc:/3ds/Hax0r/error.txt")
+	
+	if errFile then
+		errFile:write(data)
+	end
+end
+
+local function error_printer(msg, layer)
+    print((debug.traceback("Error: " .. tostring(msg), 1+(layer or 1)):gsub("\n[^\n]+$", "")))
+end
+
+function love.errhand(msg)
+	local errortime = os.date()
+    msg = tostring(msg)
+
+    error_printer(msg, 2)
+
+	if not homebrewMode then
+		if not love.window or not love.graphics or not love.event then
+			return
+		end
+
+		if not love.graphics.isCreated() or not love.window.isCreated() then
+			if not pcall(love.window.setMode, 800, 600) then
+				return
+			end
+		end
+	end
+	
+    if love.audio then 
+		love.audio.stop() 
+	end
+
+    love.graphics.setColor(255, 255, 255, 255)
+
+    local trace = debug.traceback()
+
+    love.graphics.clear()
+    love.graphics.origin()
+	
+	if not consoleFont then
+		consoleFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 16)
+	end
+	
+	love.graphics.setBackgroundColor(0, 0, 0)
+	
+	 local err = {}
+
+    table.insert(err, "Error: " .. msg)
+	
+	local n = 0
+    for l in string.gmatch(trace, "(.-)\n") do
+		n = n+1
+		if not string.match(l, "boot.lua") and n ~= 2 and n ~= 3 then
+            l = string.gsub(l, "stack traceback:", "[Stack Traceback]\n")
+            table.insert(err, l)
+        end
+    end
+
+    local p = table.concat(err, "\n")
+
+    p = string.gsub(p, "\t", "")
+    --p = string.gsub(p, "%[string \"(.-)\"%]", "%1")
+	--p = string.gsub(p, "\r\n", "\n")
+	--p = string.gsub(p, "\n", "\r\n")
+	
+	function string:split(delimiter) --Not by me
+		local result = {}
+		local from  = 1
+		local delim_from, delim_to = string.find( self, delimiter, from  )
+		while delim_from do
+			table.insert( result, string.sub( self, from , delim_from-1 ) )
+			from = delim_to + 1
+			delim_from, delim_to = string.find( self, delimiter, from  )
+		end
+		table.insert( result, string.sub( self, from  ) )
+		return result
+	end
+	
+	function fixText(tofixtext, maxLength)
+		local text = {""}
+		local i1 = 1
+		local font = consoleFont
+		
+		for i = 1, string.len(tofixtext) do
+			local v = string.sub(tofixtext, i, i)
+			
+			if font:getWidth( string.sub(tofixtext, i1, i) ) >= maxLength then
+				i1 = i
+				table.insert(text, v)
+			else
+				text[#text] = text[#text] .. v
+			end
+		end
+
+		return text
+	end
+
+	local major, minor, revision, codename = love.getVersion( )
+
+	local errorlog = {	
+					"[Love Version] " .. major .. "." .. minor .. "." .. revision .. "(" .. codename .. ")",
+					"[Error time] " .. errortime, p,
+					"[System OS] " .. love.system.getOS(),
+					}
+
+	savelog(table.concat(errorlog, "\r\n\r\n"))
+	
+	p = string.gsub(p, "\r\n", "\n")
+	
+	local errT = fixText(p, 400)
+	
+	local realError = {}
+	for k, v in ipairs(errT) do
+		realError[k] = v
+	end
+	
+	local function draw()
+        love.graphics.clear()
+
+		love.graphics.setScreen("top")
+
+		love.graphics.setFont(consoleFont)
+		
+		local spacer = 5
+		local yy = 0
+		for k = 1, #realError do
+			local t = realError[k]:split("\n")
+			for i, v in ipairs(t) do
+				love.graphics.print(v, 0, 10 + yy)
+				yy = yy + consoleFont:getHeight() + spacer
+			end
+		end
+		
+		love.graphics.setScreen("bottom")
+
+		love.graphics.print("Love Potion version: " .. major .. "." .. minor .. "." .. revision .. " (" .. codename .. ")", 0, 10)
+
+		love.graphics.print("Error time: " .. errortime, 0, 30)
+
+		love.graphics.present()
+	end
+	
+	while true do
+		if not homebrewMode then
+			love.event.pump()
+
+			for e, a, b, c in love.event.poll() do
+				if e == "quit" then
+					return
+				end
+				if e == "keypressed" and a == "escape" then
+					return
+				end
+			end
+		end
+		
+		draw()
+
+		if not homebrewMode then
+			if love.timer then
+				love.timer.sleep(0.1)
+			end
+		end
+	end
 end
 
 function love.update(dt)
@@ -233,9 +430,6 @@ function love.draw()
 	if _G[state .. "_draw"] then
 		_G[state .. "_draw"]()
 	end
-	
-	love.graphics.setColor(0, 0, 0)
-	love.graphics.print(love.timer.getFPS(), 0, love.graphics.getHeight() - 16)
 end
 
 function love.keypressed(key)
@@ -253,6 +447,12 @@ end
 function love.mousepressed(x, y, button)
 	if _G[state .. "_mousepressed"] then
 		_G[state .. "_mousepressed"](x, y, button)
+	end
+end
+
+function love.mousereleased(x, y, button)
+	if _G[state .. "_mousereleased"] then
+		_G[state .. "_mousereleased"](x, y, button)
 	end
 end
 

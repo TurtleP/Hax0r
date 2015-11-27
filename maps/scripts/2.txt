@@ -1,0 +1,15 @@
+levelequals=2
+freezeplayer=
+wait=2
+console=Damnit. These files are going to interfere.
+wait=6
+console=The goal here is to infect the whole machine, but..
+wait=5
+console=.. if not handled properly, data can be corrupted.
+wait=6
+console=That would be bad, no? So I've written a neat script.
+wait=7
+console=Now you can hop on their heads to infect them.
+wait=6
+console=Just be sure you don't die out there. I'll be back later.
+unfreezeplayer=

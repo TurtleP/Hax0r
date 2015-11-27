@@ -133,6 +133,15 @@ function paintbird:upCollide(name, data)
 	end
 end
 
+function paintbird:passiveCollide(name, data)
+	if name == "tile" then
+		if data.passive then
+			self.remove = true
+			game_Explode(self, nil, self.color)
+		end
+	end
+end
+
 paintdrop = class("paintdrop")
 
 function paintdrop:init(x, y, parent, speedx, speedy, spawnachild, width, height, color, doDamage)
@@ -161,7 +170,7 @@ function paintdrop:init(x, y, parent, speedx, speedy, spawnachild, width, height
 	self.parent = parent
 
 	local damage = -1
-	if not doDamage then
+	if not doDamage and not parent then
 		damage = 0
 	end
 	self.damage = damage
@@ -190,12 +199,11 @@ function paintdrop:downCollide(name, data)
 	if name == "player" then
 		if not data.dodging then
 			data:takeDamage(self.damage)
-			self.remove = true
 		end
 		return false
-	else
-		self.remove = true
 	end
+
+	self.remove = true
 end
 
 function paintdrop:rightCollide(name, data)

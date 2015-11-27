@@ -20,6 +20,8 @@ function document:init(x, y)
 
 	self.quadi = 1
 	self.timer = 0
+
+	self.extensions = {t = "document", ext = {".doc", ".txt", ".rtf", ".lua", "xls", "ppt"}}
 end
 
 function document:update(dt)

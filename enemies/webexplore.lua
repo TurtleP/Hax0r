@@ -18,10 +18,10 @@ function webexplore:init()
 	self.active = true
 	self.gravity = 0
 
-	local speed = math.random(20, 40)
+	local speed = 50
 	self.quadiy = 1
-	if self.x > 0 then
-		speed = -math.random(20, 40)
+	if self.x > 400 then
+		speed = -50
 		self.quadiy = 2
 	end
 	self.originalSpeed = speed
@@ -101,10 +101,14 @@ end
 function webexplore:flip()
 	self.speedx = -self.speedx
 	self.staticy = self:getStaticY()
-
-	self.quadiy = self.quadiy + 1
-	if self.quadiy > 2 then
+	self.originalSpeed = self.speedx
+	
+	if self.speedx > 0 then
 		self.quadiy = 1
+		self.x = self.x + 1
+	else
+		self.quadiy = 2
+		self.x = self.x - 1
 	end
 end
 

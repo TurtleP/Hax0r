@@ -33,3 +33,20 @@ function round(num, idp)
     return math.floor(num * mult + 0.5) / mult
 end
 
+function convert(a, format)
+	local f = format:lower()
+
+	if f == "mb" then
+		return a / 1024
+	else
+		return a
+	end
+end
+
+function getScoreType(a)
+	if a >= 1024 then
+		return "MB"
+	else
+		return "KB"
+	end
+end

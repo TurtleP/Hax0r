@@ -1,0 +1,14 @@
+levelequals=7
+freezeplayer=
+console=Look, I'm sorry about earlier. I got carried away.
+wait=5
+console=Let's just put that past us and things will be better.
+wait=7
+console=So, do you want to hear about what I did today?
+wait=5
+console=Well, I made another script. I'll upload it now.
+wait=5
+unfreezeplayer=
+console=It was a missing component I forgot to upload with you.
+wait=5
+console=Just don't stand there doing nothing, you useless pointer.

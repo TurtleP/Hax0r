@@ -4,30 +4,56 @@ function eventsystem:init()
 	self.sleep = 0
 	self.i = 0
 	self.events = {}
+	currentScript = 1
+	self.running = true
 end
 
 function eventsystem:update(dt)
 	if self.i < #self.events then
+		--[[
+			local add = 0
+			if consoles[1] then
+				if consoles[1].speedup then
+					add = 0.04
+				end
+			end
+		--]]
+
 		if self.sleep > 0 then
 			self.sleep = math.max(0, self.sleep - dt)
 		end
 
-		if self.sleep == 0 then
+		if self.sleep == 0 and self.running then
 			self.i = self.i + 1
 
 			local v = self.events[self.i]
 
 			if v.cmd == "console" then
-				consoles[1] = console:new(v.args[1], v.args[2], v.args[3])
+				consoles[1] = console:new(v.args)
 			elseif v.cmd == "wait" then
 				self.sleep = v.args
 			elseif v.cmd == "spawnplayer" then
-				objects["player"][1] = player:new(v.args[1], v.args[2], true)
+				objects["player"][1] = player:new(playerX, playerY, true)
 			elseif v.cmd == "firewallfree" then
 				if objects["firewall"][1] then
 					objects["firewall"][1]:fade()
 				end
+			elseif v.cmd == "freezeplayer" then
+				_LOCKPLAYER = true
+			elseif v.cmd == "unfreezeplayer" then
+				_LOCKPLAYER = false
+			elseif v.cmd == "terminaladd" then
+				local data = fixTerminalData(v.args)
+
+				for i, v in pairs(data) do
+					table.insert(terminalstrings, v)
+				end
 			end
+		end
+	else
+		if self.running then
+			currentScript = currentScript + 1
+			self.running = false
 		end
 	end
 end
@@ -40,33 +66,35 @@ function eventsystem:clear()
 	self.events = {}
 end
 
-function eventsystem:onMapLoad(map)
-	if map == 1 then
-		eventSystem:queue("console", {"Alright.. so this goes here.."})
-		eventSystem:queue("wait", 6)
-		eventSystem:queue("console", {"... and this needs to be secured.."})
+function eventsystem:decrypt(scriptString)
+	local split = scriptString:split("\n")
+	local cmd = {}
 
-		eventSystem:queue("wait", 6)
-		eventSystem:queue("console", {"[HOST] Connecting to remote PC at XXX.XX.XXX.X:XXXXX .."})
-		eventSystem:queue("wait", 8)
+	for k, v in pairs(split) do
+		local thingy = v:split("=")
+		
+		if thingy[2] then
+			thingy[2] = thingy[2]:sub(1, #thingy[2] - 1)
+		end
 
-		eventSystem:queue("spawnplayer", {playerX, playerY})
-		eventSystem:queue("wait", 1)
-		eventSystem:queue("console", {"Good. Now my monsterous virus .. wait is this a PowerPC 95?"})
+		table.insert(cmd, {thingy[1], thingy[2]})
+	end
 
-		eventSystem:queue("wait", 8)
-		eventSystem:queue("console", {"Whatever. Using you, I can stream data back to me."})
-		eventSystem:queue("wait", 8)
+	if cmd[1][1] == "levelequals" then
+		if currentMap ~= tonumber(cmd[1][2]) then
+			return
+		else
+			self.running = true
+		end
+	else
+		self.running = true
+	end
 
-		eventSystem:queue("console", {"Go ahead and move with CIRCLEPAD LEFT or RIGHT."})
-		eventSystem:queue("wait", 10)
-		eventSystem:queue("console", {"Now to decrypt this stupid firewall blocking C:\\.."})
-
-		eventSystem:queue("wait", 10)
-		eventSystem:queue("console", {"[HOST] Running /bin/firewalldecrypt.sh on remote PC.."})
-		eventSystem:queue("wait", 6)
-
-		eventSystem:queue("console", {"[HOST] Decryption completed."})
-		eventSystem:queue("firewallfree")
+	for k = 1, #cmd do
+		local arg = cmd[k][2]
+		if cmd[k][1] == "wait" then
+			cmd[k][2] = tonumber(arg)
+		end
+		self:queue(cmd[k][1], cmd[k][2])
 	end
 end

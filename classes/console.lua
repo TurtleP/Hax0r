@@ -16,6 +16,8 @@ function console:init(string, color, func)
 	self.endTimer = 0
 	self.stringColor = color or {255, 255, 255}
 	
+	self.speedup = false
+
 	if func then
 		func()
 	end
@@ -41,6 +43,16 @@ function console:update(dt)
 			self.remove = true
 		end
 	end
+end
+
+function console:keydown()
+	self.delay = 0.001
+	self.speedup = true
+end
+
+function console:keyup()
+	self.speedup = false
+	self.delay = 0.04
 end
 
 function console:draw()

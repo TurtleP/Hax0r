@@ -1,202 +1,300 @@
 function title_init()
 	titleStrings = 
 	{
-		{"New game", function() gameFunctions.changeState("game") end},
-		{"View credits", function() gameFunctions.changeState("credits") end}, 
-		{"Quit", love.event.quit}, 
-		{"Delete save data", function() end}
+		function() gameFunctions.changeState("game") end,
+		function() gameFunctions.changeState("credits") end, 
+		--{"Quit", love.event.quit}, 
+		function() end
 	}
 
 	if not io.open("sdmc:/3ds/Hax0r/save.txt") then
 		noData = true
 	else
-		titleStrings[1] = "Continue game"
+		titleStrings[3] = function() 
+			if state ~= "game" then
+				state = "game" 
+			end 
+			game_init(true)
+		end
 	end
 	
-	love.graphics.setBackgroundColor(63, 80, 87)
+	love.graphics.setBackgroundColor(0, 128, 128)
 
 	titleselectioni = 1
 	tapCount = 0
 	
-	myDock = createDock()
+	startButton = createStart()
+	
+	icons = 
+	{
+		createIcon(16, 16, "Web 95", "web", titleStrings[1]),
+		createIcon(16, 88, "My PC", "computer", titleStrings[2]),
+		createIcon(16, 160, "save.txt", "document", titleStrings[3])
+	}
+
+	if noData then
+		table.remove(icons, 3)
+	end
+
+	spawnPlayer = false
+	waitTimer = 0
+
+	spawnTimer = math.random(3)
+	bitEnemies = {}
+
+	titleMouseX, titleMouseY = nil, nil
+
+	backgroundi = 1
+	backgroundtimer =0
 end
 
 function title_update(dt)
 	if not titlemusic:isPlaying() then
 		titlemusic:play()
 	end
+
+	backgroundtimer = backgroundtimer + 12 * dt
+	backgroundi = math.floor(backgroundtimer % 8) + 1
+
+	if waitTimer > 60 then
+		if not spawnPlayer then
+			waitTimer = 0
+			playerObject = player:new(9 * 16, 14 * 16, true)
+			spawnPlayer = true
+		end
+	else
+		waitTimer = waitTimer + dt
+	end
+
+	if spawnPlayer then
+		playerObject:update(dt)
+
+		playerObject.speedy = math.min(playerObject.speedy + playerObject.gravity * dt, 10 * 16)
+
+		playerObject.y = playerObject.y + playerObject.speedy * dt
+		playerObject.x = playerObject.x + playerObject.speedx * dt
+
+		if playerObject.y + playerObject.speedy * dt > 208 then
+			playerObject.y = 208
+			playerObject.speedy = 0
+			playerObject.jumping = false
+		end
+
+		if playerObject.x - playerObject.speedx * dt < 0 then
+			playerObject.speedx = 0
+			playerObject.x = 0
+		elseif playerObject.x + playerObject.width + playerObject.speedx * dt > 320 then
+			playerObject.speedx = 0
+			playerObject.x = 304
+		end
+
+		if spawnTimer > 0 then
+			spawnTimer = spawnTimer - dt
+		else
+			if #bitEnemies < 6 then
+				table.insert(bitEnemies, newBit(math.random(32, 288), math.random(7 * 16, 10 * 16)))
+			end
+			spawnTimer = math.random(3)
+		end
+
+		for k, v in ipairs(bitEnemies) do
+			v:update(dt)
+
+			if playerObject.speedy > 0 then
+				local obj = playerObject
+				if aabb(obj.x, obj.y + obj.speedy * dt, obj.width, obj.height, v.x, v.y, v.width, v.height) then
+					playerObject:jump(true)
+					table.remove(bitEnemies, k)
+				end
+			end
+		end
+	end
 end
 
 function title_draw()
-	love.graphics.setScreen("top")
-	
-	love.graphics.setColor(53, 68, 73)
-	love.graphics.rectangle("fill", 0, 0, gameFunctions.getWidth(), 18)
-	
-	love.graphics.setColor(87, 111, 119)
-	love.graphics.rectangle("fill", 20 + consoleFont:getWidth("Applications"), 0, 1, 18)
-	
-	love.graphics.setColor(255, 255, 255)
-	love.graphics.draw(appsicon, 2, 2)
-	love.graphics.print("Applications", 18, 0)
-	
-	love.graphics.print(os.date("%H : %M"), gameFunctions.getWidth() - consoleFont:getWidth(os.date("%H : %M")) - 2, 2)
-	
 	love.graphics.setColor(255, 255, 255, 255)
-	love.graphics.draw(titleimg, gameFunctions.getWidth() / 2 - 76, gameFunctions.getHeight() / 2 - 18)
-	
-	love.graphics.setScreen("bottom")
 
-	myDock:draw()
+	love.graphics.setScreen("top")
+	love.graphics.draw(background[backgroundi], 0, 0)
+
+	love.graphics.setColor(0, 0, 0)
+	love.graphics.draw(titleimg, gameFunctions.getWidth() / 2 - titleimg:getWidth() / 2 - 2, gameFunctions.getHeight() / 2 - titleimg:getHeight() / 2 - 2)
+
+	love.graphics.setColor(255, 255, 255, 255)
+	love.graphics.draw(titleimg, gameFunctions.getWidth() / 2 - titleimg:getWidth() / 2, gameFunctions.getHeight() / 2 - titleimg:getHeight() / 2)
+
+	love.graphics.setScreen("bottom")
+	
+	love.graphics.setColor(168, 168, 168)
+	love.graphics.rectangle("line", 0, gameFunctions.getHeight() - 16, gameFunctions.getWidth(), 16)
+	
+	love.graphics.setColor(192, 192, 192)
+	love.graphics.rectangle("fill", 64, gameFunctions.getHeight() - 15, gameFunctions.getWidth() - 64, 15)
+	
+	love.graphics.setFont(consoleFont)
+	
+	love.graphics.setColor(145, 145, 145)
+	love.graphics.rectangle("line", 64, gameFunctions.getHeight() - 12, 0.5, 10)
+	
+	startButton:draw()
+	
+	for k, v in ipairs(icons) do
+		v:draw()
+	end
+
+	if spawnPlayer then
+		playerObject:draw()
+
+		for k, v in ipairs(bitEnemies) do
+			v:draw()
+		end
+	end
 end
 
 function title_mousepressed(x, y, button)
-	myDock:click(x, y)
-	
-	--[[for k = 1, #titleStrings do
-		if aabb(x, y, 2, 2, 10 + (k - 1) * 36, love.graphics.getHeight() - 32, 32, 32) then
-			titleselectioni = k
-			tapCount = 1
-		else
-			tapCount = 0
+	for k, v in pairs(icons) do
+		v:click(x, y)
+	end
+
+	titleMouseX, titleMouseY = love.mouse.getX(), love.mouse.getY()
+end
+
+function title_mousereleased()
+	if titleMouseX and titleMouseY then
+		for k, v in pairs(icons) do
+			v:unclick(titleMouseX, titleMouseY)
 		end
 	end
-	
-	if tapCount == 1 then
-		if aabb(x, y, 2, 2, 10 + (titleselectioni - 1) * 36, love.graphics.getHeight() - 32, 32, 32) then
-			titleStrings[titleselectioni][2]()
-		end
-	end]]
 end
 
 function title_keypressed(key)
-	myDock:keypressed(key)
-	
 	if key == "b" then
 		love.event.quit()
 	end
+
+	if not playerObject then
+		return
+	end
+
+	if key == controls["left"] then
+		playerObject:moveleft(true)
+	elseif key == controls["right"] then
+		playerObject:moveright(true)
+	elseif key == controls["jump"] then
+		playerObject:jump()
+	elseif key ==  controls["up"] then
+		playerObject:moveup(true)
+	elseif key == controls["down"] then
+		playerObject:movedown(true)
+	elseif key == controls["dodge"][1] or key == controls["dodge"][2] then
+		playerObject:dodge()
+	end
 end
 
-function createDock()
-	local dock = {}
-	
-	dock.x = 80
-	dock.y = love.graphics.getHeight() - 32
-	dock.width = 160
-	dock.height = 32
-	dock.buttons = {}
-	
-	for k = 1, 4 do
-		dock.buttons[k] = createButton(dock.x + 10 + (k - 1) * 36, dock.y, k, titleStrings[k][1], titleStrings[k][2])
+function title_keyreleased(key)
+	if not playerObject then
+		return
 	end
-	
-	function dock:draw()
-		love.graphics.setColor(255, 255, 255, 255)
-		love.graphics.rectangle("fill", self.x, self.y, 8, self.height)
 
-		love.graphics.setColor(32, 32, 32, 128)
-		love.graphics.rectangle("fill", self.x + 8, self.y, self.width - 16, self.height)
-
-		love.graphics.setColor(255, 255, 255, 255)
-		love.graphics.rectangle("fill", self.x + self.width - 8, self.y, 8, self.height)
-		
-		--icons
-		love.graphics.setFont(consoleFont)
-
-		for k = 1, 4 do
-			self.buttons[k]:draw()
-		end
+	if key == controls["left"] then
+		playerObject:moveleft(false)
+	elseif key == controls["right"] then
+		playerObject:moveright(false)
+	elseif key ==  controls["up"] then
+		playerObject:moveup(false)
+	elseif key == controls["down"] then
+		playerObject:movedown(false)
 	end
-	
-	function dock:click(x, y)
-		for k, v in pairs(self.buttons) do
-			v:click(x, y)
-		end
-	end
-	
-	function dock:keypressed(key)
-		self.buttons[titleselectioni].selected = false
-		if key == "cpadleft" or key == "dleft" then
-			titleselectioni = titleselectioni - 1
-			
-			if noData then
-				if titleselectioni < 1 then
-					titleselectioni = 3
-				end
-			else
-				if titleselectioni < 1 then
-					titleselectioni = #titleStrings
-				end
-			end
-		elseif key == "cpadright" or key == "dright" then
-			self.buttons[titleselectioni].selected = false
-			titleselectioni = titleselectioni + 1
-			
-			if noData then
-				if titleselectioni > #titleStrings - 1 then
-					titleselectioni = 1
-				end
-			else
-				if titleselectioni > #titleStrings then
-					titleselectioni = 1
-				end
-			end
-		end
-
-		self.buttons[titleselectioni].selected = true
-		
-		if key == "start" or key == "a" then
-			self.buttons[titleselectioni].func()
-		end
-	end
-	
-	return dock
 end
 
-function createButton(x, y, i, t, f)
-	local button = {}
+function createStart()
+	local start = {}
+	start.x = 0
+	start.y = gameFunctions.getHeight() - 15
+	start.width = 64
+	start.height = 16
 	
-	button.x = x
-	button.y = y
-	button.width = 32
-	button.height = 32
-	button.func = f
-	button.selected = false
-	button.i = i
-	button.text = t 
+	start.open = false
 	
-	function button:draw()
-		love.graphics.draw(dockimg, dockquads[self.i], self.x, self.y)
-		
-		local v = self.text
-		if self.selected then
-			love.graphics.setColor(64, 64, 64)
-			love.graphics.rectangle("fill", self.x + (self.width / 2) - consoleFont:getWidth(v) / 2 - 2, self.y - 34, consoleFont:getWidth(v) + 4, 20)
-
-			love.graphics.setColor(255, 255, 255)
-			love.graphics.print(v, self.x + (self.width / 2) - consoleFont:getWidth(v) / 2, self.y - 32)
-
-			love.graphics.draw(dockbottomimg, self.x + (self.width / 2) - dockbottomimg:getWidth() / 2, self.y - 14)
+	function start:draw()
+		local color = {192, 192, 192}
+		if self.open then
+			
 		end
+		
+		love.graphics.setColor(unpack(color))
+		love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
+		
+		love.graphics.setColor(255, 255, 255)
+		love.graphics.draw(sudoimg, sudoquads[3], self.x + 2, (self.y + self.height) - 15)
+		
+		love.graphics.setColor(0, 0, 0)
+		love.graphics.print("start", 22, gameFunctions.getHeight() - consoleFont:getHeight("start") - 2)
+		love.graphics.setColor(255, 255, 255)
 	end
 	
-	function button:click(x, y)
-		if aabb(x, y, 2, 2, self.x, self.y, self.width, self.height) then
-			if noData and self.i == 4 then
-				myDock.buttons[titleselectioni].selected = true
-				return
-			end
-		
-			titleselectioni = self.i
-			self.selected = true
-		else
-			self.selected = false
+	return start
+end
+
+function createIcon(x, y, text, i, func)
+	local icon = {}
+	
+	icon.x = x
+	icon.y = y
+	icon.width = 32
+	icon.height = 32
+	
+	if i == "web" then
+		icon.graphic = love.graphics.newImage("graphics/ieicon.png")
+	elseif i == "computer" then
+		icon.graphic = computerimg
+	else
+		icon.graphic = love.graphics.newImage("graphics/documenticon.png")
+	end
+	
+	icon.text = text or ""
+	
+	icon.i = i
+
+	icon.height = 36
+	icon.clickCount = 0
+	icon.func = func
+	
+	function icon:update(dt)
+	
+	end
+	
+	function icon:draw()
+		local color = {255, 255, 255}
+		if self.clickCount > 0 then
+			color = {0, 0, 255}
+		end
+		love.graphics.setColor(unpack(color))
+		love.graphics.draw(self.graphic, self.x + self.width / 2 - self.graphic:getWidth() / 2, self.y)
+
+		love.graphics.setColor(0, 0, 0)
+		love.graphics.print(self.text, self.x + self.width / 2 - consoleFont:getWidth(self.text) / 2, self.y + self.height)
+	end
+	
+	function icon:click(x, y)
+		if x > self.x and x < self.x + self.width and y > self.y and y < self.y + self.height then
+			self.clickCount = self.clickCount + 1
 		end
 		
-		if self.selected then
+		if self.clickCount > 2 then
 			self.func()
 		end
 	end
 	
-	return button
+	function icon:unclick(x, y)
+		if self.clickCount > 0 then
+			if x > self.x and x < self.x + self.width and y > self.y and y < self.y + self.height then
+				self.clickCount = self.clickCount + 1
+			else
+				self.clickCount = 0
+			end
+		end
+	end
+	
+	return icon
 end

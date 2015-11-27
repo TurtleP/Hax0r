@@ -1,0 +1,8 @@
+levelequals=5
+console=This is quite the data haul I--you seem to have here.
+wait=6
+console=Of course, this is only a fraction of the whole disk space.
+wait=6
+console=Don't give me that look. I built you from scratch!
+wait=5
+console=You'll keep going and do as I have requested!
