@@ -32,6 +32,7 @@ require 'enemies/executioner'
 require 'enemies/sudo'
 require 'enemies/webexplore'
 require 'enemies/document'
+require 'enemies/cmd'
 
 require 'classes/bitenemy'
 
@@ -200,6 +201,14 @@ function love.load()
 		end
 	end
 
+	cmdimg = love.graphics.newImage("enemies/powercmd.png")
+	cmdquads = {}
+	for k = 1, 5 do
+		cmdquads[k] = love.graphics.newQuad((k - 1) * 17, 0, 16, 16, cmdimg:getWidth(), cmdimg:getHeight())
+	end
+
+	hitpointimg = love.graphics.newImage("graphics/hitpoint.png")
+
 	--maps
 
 	local myDirectory = "sdmc:/3ds/Hax0r/game/maps/scripts"
@@ -221,13 +230,10 @@ function love.load()
 		end
 	end
 
-	--maps[5] = require "maps/testmap"
-
---	maps[4] = require "maps/save"
-
 	--audio
 	titlemusic = love.audio.newSource("audio/title.wav")
 	bossmusic = love.audio.newSource("audio/boss.wav")
+	midbossmusic = love.audio.newSource("audio/midboss.wav")
 
 	consolesound = love.audio.newSource("audio/console.wav")
 	jumpsound = love.audio.newSource("audio/jump.wav")
@@ -240,6 +246,11 @@ function love.load()
 	savesnd = love.audio.newSource("audio/save.wav")
 	blipsnd = love.audio.newSource("audio/blip.wav")
 	lifesnd = love.audio.newSource("audio/addlife.wav")
+
+	collectSnd = {}
+	for k = 1, 3 do
+		collectSnd[k] = love.audio.newSource("audio/infect" .. k .. ".wav")
+	end
 
 	--FONTS
 	--other

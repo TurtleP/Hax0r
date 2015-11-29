@@ -18,7 +18,7 @@ function physicsupdate(dt)
 					objData.speedy = math.min(objData.speedy + objData.gravity * dt, 10 * 16) --add gravity to objects
 
 					for name2, object2T in pairs(obj) do
-						if objData.mask[name2] == true and not objData.passive then
+						if objData.mask and objData.mask[name2] == true and not objData.passive then
 							hor, ver = checkCollision(objectT, object2T, objData, name, name2, dt)
 						else
 							checkPassive(objectT, object2T, objData, name, name2, dt)
@@ -85,11 +85,11 @@ function checkCollision(objTable, obj2Table, objData, objName, obj2Name, dt)
 					hor = horizontalCollide(objName, objData, obj2Name, obj2Data)
 				else
 					--dat bug doe, some sort of dianal collision thing. gg Maurice.
-					if (objData.speedy - objData.gravity * dt) > (objData.speedx) then
+					--[[if (objData.speedy - objData.gravity * dt) > (objData.speedx) then
 						ver = verticalCollide(objName, objData, obj2Name, obj2Data)
 					else
 						hor = horizontalCollide(objName, objData, obj2Name, obj2Data)
-					end
+					end]]
 				end
 
 			end
@@ -132,7 +132,7 @@ function horizontalCollide(objName, objData, obj2Name, obj2Data)
 				obj2Data.speedx = 0
 			end
 		end
-	else 
+	elseif objData.speedx < 0 then
 		if objData.leftCollide then
 			changedspeed = objData:leftCollide(obj2Name, obj2Data)
 			if changedspeed ~= false then
@@ -191,7 +191,7 @@ function verticalCollide(objName, objData, obj2Name, obj2Data)
 				obj2Data.speedy = 0
 			end
 		end
-	else
+	elseif objData.speedy < 0 then
 		if objData.upCollide then
 			changedspeed = objData:upCollide(obj2Name, obj2Data)
 

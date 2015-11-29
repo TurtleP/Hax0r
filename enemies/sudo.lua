@@ -122,6 +122,8 @@ function rocket:init(x, y)
 	self.chase = false
 
 	self.starty = y
+
+	self.life = 5
 end	
 
 function rocket:update(dt)
@@ -205,6 +207,13 @@ function rocket:update(dt)
 		else
 			table.remove(self.smokes, k)
 		end
+	end
+
+	if self.life > 0 then
+		self.life = self.life - dt
+	else
+		game_Explode(self, nil, {255, 0, 0})
+		self.remove = true
 	end
 end
 

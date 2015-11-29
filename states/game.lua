@@ -4,6 +4,9 @@ function game_init(loadSaveFile)
 	for k = 1, 14 do
 		maps[k] = {map = require("maps/" .. k), name = _MAPNAMES[k]}
 	end
+
+	maps[15] = {map = require("maps/midboss"), name = "C:\\System32\\> PowerCMD"}
+
 	playerhealth = 5
 
 	eventSystem = eventsystem:new()
@@ -12,10 +15,12 @@ function game_init(loadSaveFile)
 
 	currentMap = 1
 
+	maplist[15] = {maps[15], 15}
+
 	score = 0
 
 	if not loadSaveFile then
-		maplist[1] = {maps[currentMap], 1}
+		maplist[1] = {maps[1], 1}
 
 		local listCount = 2
 
@@ -319,6 +324,23 @@ function game_draw()
 				yy = yy + consoleFont:getHeight() + spacer
 			end
 		end
+
+		love.graphics.setColor(255, 255, 255)
+
+		if objects["boss"][1] then
+			local name = objects["boss"][1].name .. ":"
+			local x = (gameFunctions.getWidth() / 2 - ( (consoleFont:getWidth(name) / 2) + 52 / 2) )
+			love.graphics.print(name, x, (18 / 2) - consoleFont:getHeight(name) / 2 - 2)
+
+			for k = 1, objects["boss"][1].maxhealth do
+				if k > objects["boss"][1].health then
+					love.graphics.setColor(127, 127, 127)
+				else
+					love.graphics.setColor(255, 255, 255)
+				end
+				love.graphics.draw(hitpointimg, math.floor(x + consoleFont:getWidth(name)) + 4 + (k - 1) * 12, 9 - hitpointimg:getHeight() / 2)
+			end
+		end
 	--end
 end
 
@@ -337,8 +359,8 @@ function game_keypressed(key)
 		end
 	end
 
-	if paused then
-		--pauseMenu:keypressed(key)
+	if key == "y" then
+		objects["boss"][1]:takeDamage()
 	end
 
 	if key == "select" then
@@ -476,6 +498,8 @@ function game_Explode(self, other, color)
 		table.remove(terminalstrings, 1)
 	end
 
+	collectSnd[math.random(#collectSnd)]:play()
+
 	if objects["player"][1].health < 5 then
 		if math.random(100) < 30 then
 			table.insert(objects["health"], healthitem:new(obj.x + obj.width / 2, obj.y))
@@ -545,6 +569,8 @@ function loadMap(mapn)
 				table.insert(objects["webexplorer"], webexplore:new())
 			elseif map[y][x] == 12 then
 				table.insert(objects["document"], document:new((x - 1) * 16, (y - 1) * 16))
+			elseif map[y][x] == 13 then
+				objects["boss"][1] = cmd:new((x - 1) * 16, (y - 1) * 16)
 			end
 		end
 	end
@@ -724,7 +750,7 @@ end
 
 function getEnemyCount()
 	local o = objects
-	local audio, exe, doc, sys, img, web = o["audioblaster"], o["executioner"], o["document"], o["sudo"], o["paintbird"], o["webexplorer"]
+	local audio, exe, doc, sys, img, web, boss = o["audioblaster"], o["executioner"], o["document"], o["sudo"], o["paintbird"], o["webexplorer"], o["boss"]
 
-	return (#audio + #exe + #doc + #sys + #img + #web)
+	return (#audio + #exe + #doc + #sys + #img + #web + #boss)
 end

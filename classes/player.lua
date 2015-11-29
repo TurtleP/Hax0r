@@ -30,7 +30,8 @@ function player:init(x, y, fadein, health)
 		["rocket"] = true,
 		["webexplorer"] = true,
 		["notes"] = true,
-		["document"] = true
+		["document"] = true,
+		["boss"] = true
 	}
 	
 	self.quads = {}
@@ -96,8 +97,11 @@ function player:init(x, y, fadein, health)
 		["notes"] = true,
 		["document"] = true,
 		["executioner"] = true,
-		["barrier"] = true
+		["barrier"] = true,
+		["boss"] = true
 	}
+
+	self.minJumpHeight = 6
 end
 
 function player:update(dt)
@@ -148,6 +152,14 @@ function player:update(dt)
 		if self.speedx == 0 and self.speedy == 0 then
 			self.gravity = playergravity
 			self.dodging = false
+		end
+	end
+
+	if not self.hopping and not self.dodging then
+		if not love.keyboard.isDown(controls["jump"]) and self.speedy < 0 then
+			if self.speedy < self.minJumpHeight then
+				self.speedy = self.minJumpHeight
+			end
 		end
 	end
 
@@ -312,12 +324,13 @@ function player:jump(shortHop)
 		if shortHop then
 			self.speedy = -120
 			self.jumping = true
+			self.hopping = true
 		end
 	end
 end
 
 function player:downCollide(name, data)
-	if self.dodging then
+	if self.dodging or self.speedy == 0 then
 		if name ~= "tile" then
 			return false
 		end
@@ -362,8 +375,27 @@ function player:downCollide(name, data)
 		return false
 	end
 
+	if name == "boss" then
+		if data.fade > 0.5 then
+			local dir = {"left", "right"}
+			local choice = ""
+
+			if data.speedx ~= 0 then
+				self.speedx = -data.speedx
+			else
+				choice = dir[math.random(2)]
+			end
+
+			self.jumping = choice
+			self:jump(true)
+			data:takeDamage()
+		end
+		return false
+	end
+
 	self.jumping = false
 	self.canDodge = true
+	self.hopping = false
 end
 
 function player:upCollide(name, data)
@@ -379,7 +411,6 @@ function player:leftCollide(name, data)
 
 	if name == "tile" then
 		if self.speedx < 0 then
-			self.speedy = -60
 			self.jumping = "left"
 		end
 	end
@@ -392,7 +423,6 @@ function player:rightCollide(name, data)
 	
 	if name == "tile" then
 		if self.speedx > 0 then
-			self.speedy = -60
 			self.jumping = "right"
 		end
 	end
