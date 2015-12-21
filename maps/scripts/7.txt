@@ -1,0 +1,10 @@
+levelequals=15
+freezeplayer=
+console=What the.. This is not good at all!
+wait=6
+console=Looks like they found us out. We need to do something!
+wait=8
+console=No, this isn't easy. They're hacking us back.
+wait=8
+console=I'll attempt to override their systems.
+unfreezeplayer=

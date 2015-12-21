@@ -225,11 +225,9 @@ end
 function cmd:die()
 	self.song:stop()
 	self.remove = true
+	midbossSong = nil
+	endBossSong = love.audio.newSource("audio/boss.wav")
 	game_Explode(self, nil, {0, 0, 0})
-end
-
-function cmd:evolve(dt)
-
 end
 
 bullet = class("bullet")
