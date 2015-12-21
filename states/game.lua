@@ -22,16 +22,15 @@ function game_init(loadSaveFile)
 	if not loadSaveFile then
 		maplist[1] = {maps[1], 1}
 
-		local listCount = 2
-
-		while (listCount < 14) do
+		while (#maplist < 15) do
 			if #maps < 2 then
 				break
 			end
 			local rand = math.random(2, #maps)
-			maplist[listCount] = {maps[rand], rand}
-			table.remove(maps, rand)
-			listCount = listCount + 1
+			if maps[rand].name ~= "C:\\System32\\> PowerCMD" then
+				table.insert(maplist, {maps[rand], rand})
+				table.remove(maps, rand)
+			end
 		end
 	else
 		saveGame(true)
@@ -315,6 +314,8 @@ function game_draw()
 		love.graphics.print("_", consoleFont:getWidth(cmd) + consoleFont:getWidth("_") / 2, 20)
 		love.graphics.setColor(255, 255, 255, 255)
 
+		love.graphics.print(round(collectgarbage("count") / 1024, 2) .. "MB of RAM", 0, 38)
+
 		local spacer = 5
 		local yy = 0
 		for k = 1, #terminalstrings do
@@ -359,17 +360,14 @@ function game_keypressed(key)
 		end
 	end
 
-	if key == "y" then
-		objects["boss"][1]:takeDamage()
-	end
-
 	if key == "select" then
 		savingGame = true
 	end
 
 	if consoles[1] then
 		if key == "x" then
-			consoles[1]:keydown()
+			consoles[1] = nil
+			eventSystem.sleep = 0
 		end
 	end
 
@@ -488,15 +486,15 @@ function game_Explode(self, other, color)
 
 	pointsAdd = true
 
-	for i, v in pairs(str) do
+	--[[for i, v in pairs(str) do
 		table.insert(terminalstrings, v)
 	end
 
-	print(#terminalstrings)
-
-	if #terminalstrings > 3 then
-		table.remove(terminalstrings, 1)
-	end
+	if #terminalstrings > 8 then
+		for k = 2, 1, -1 do
+			table.remove(terminalstrings, k)
+		end
+	end]]
 
 	collectSnd[math.random(#collectSnd)]:play()
 
@@ -733,10 +731,10 @@ function saveGame(load, temp)
 				currentMap = tonumber(v)
 			elseif k == "score" then
 				score = tonumber(v)
-			else
-				if k == "temp" then
-					pass = true
-				end
+			elseif k == "currentScript" then
+				currentScript = tonumber(v)
+			elseif k == "temp" then
+				pass = true
 			end
 		end
 
@@ -752,5 +750,5 @@ function getEnemyCount()
 	local o = objects
 	local audio, exe, doc, sys, img, web, boss = o["audioblaster"], o["executioner"], o["document"], o["sudo"], o["paintbird"], o["webexplorer"], o["boss"]
 
-	return (#audio + #exe + #doc + #sys + #img + #web + #boss)
+	return (#audio + #exe + #doc + #sys + #img + #web + #boss + #consoles)
 end

@@ -24,8 +24,6 @@ function intro_draw()
 
 	love.graphics.setScreen("bottom")
 	love.graphics.draw(introimg, love.graphics.getWidth() / 2 - introimg:getWidth() / 2, love.graphics.getHeight() / 2 - introimg:getHeight() / 2)
-	love.graphics.setFont(introFont)
-	love.graphics.print("A game by TurtleP", gameFunctions.getWidth() / 2 - introFont:getWidth("A game by TurtleP") / 2, 180)
 end
 
 function intro_mousepressed(x, y, button)

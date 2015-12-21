@@ -369,8 +369,8 @@ function player:downCollide(name, data)
 	end
 
 	if name == "document" then
-		game_Explode(data, nil, {155, 213, 0})
 		self:jump(true)
+		game_Explode(data, nil, {155, 213, 0})
 		data.remove = true
 		return false
 	end
@@ -444,10 +444,9 @@ function player:takeDamage(value)
 			if self.dodging then
 				return
 			end
-
-			self.health = self.health + value
 		
 			if value < 0 then
+				self.health = self.health + value
 				self.invincible = true
 			end
 		end

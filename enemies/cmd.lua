@@ -31,9 +31,8 @@ function cmd:init(x, y, finalboss)
 	titlemusic:stop()
 
 	self.name = "PowerCMD"
-	self.song = midbossmusic
+	self.song = bossmusic
 	if finalboss then
-		self.song = bossmusic
 		self.name = "System32"
 	end
 
@@ -171,6 +170,7 @@ function cmd:draw()
 	end
 
 	love.graphics.setColor(0, 0, 0, 255 * self.fade)
+	love.graphics.circle("fill", self.x + 8, self.y + 8, 8, 64)
 	love.graphics.circle("line", self.x + 8, self.y + 8, 8, 64)
 
 	love.graphics.setColor(255, 255, 255, 255 * self.fade)
@@ -273,4 +273,5 @@ end
 function bullet:draw()
 	love.graphics.setColor(255, 255, 0, 255)
 	love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
+	love.graphics.setColor(255, 255, 255, 255)
 end

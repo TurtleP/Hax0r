@@ -1,0 +1,8 @@
+levelequals=8
+console=I'm actually surprised I've gotten a PowerPC95 to hack.
+wait=7
+console=They are quite rare these days, and have valuable data.
+wait=7
+console=Most of the data in them stands around doing nothing.
+wait=6
+console=..I'll just leave you be again. Carry on.

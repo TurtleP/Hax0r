@@ -50,8 +50,8 @@ require 'classes/bitenemy'
 
 function love.load()
 
-	--love.window.setMode(400, 240)
-	--_DEBUGCOLLS = true
+	startTime = love.timer.getTime()
+	loadingData = {}
 
 	controls = {}
 
@@ -80,6 +80,11 @@ function love.load()
 		math.randomseed(os.time())
 	end
 
+	consoleFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 16)
+	introFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 32)
+
+	loading(0, "graphics")
+
 	titleimg = love.graphics.newImage("graphics/title.png")
 
 	tileimg = love.graphics.newImage("graphics/base.png")
@@ -95,6 +100,8 @@ function love.load()
 		UIIcons["health"]["quads"][k] = love.graphics.newQuad((k - 1) * 20, 0, 19, 16, UIIcons["health"]["img"]:getWidth(), 16)
 	end
 
+	loading(1)
+
 	playerimg = love.graphics.newImage("graphics/player-new.png")
 	playerquads = {}
 	for k = 1, 3 do
@@ -106,6 +113,8 @@ function love.load()
 	for k = 1, 2 do
 		firewallquads[k] = love.graphics.newQuad((k - 1) * 17, 0, 16, 16, firewallimg:getWidth(), firewallimg:getHeight()) 
 	end
+
+	loading(2)
 
 	waterimg = love.graphics.newImage("graphics/digitalsea.png")
 	waterquads = {}
@@ -119,6 +128,8 @@ function love.load()
 		deathquads[k] = love.graphics.newQuad((k - 1) * 17, 0, 16, 16, deathimg:getWidth(), deathimg:getHeight())
 	end
 
+	loading(3)
+
 	waterbaseimg = love.graphics.newImage("graphics/seatile.png")
 
 	executionerimg = {love.graphics.newImage("enemies/executioner.png"), love.graphics.newImage("enemies/executionerFlip.png")}
@@ -126,6 +137,8 @@ function love.load()
 	for k = 1, 5 do
 		executionerquads[k] = love.graphics.newQuad((k - 1) * 22, 0, 21, 29, executionerimg[1]:getWidth(), executionerimg[1]:getHeight())
 	end
+
+	loading(4)
 	
 	musicimg = love.graphics.newImage("enemies/musicFile.png")
 	musicquads = {}
@@ -139,6 +152,8 @@ function love.load()
 		notequads[k] = love.graphics.newQuad((k - 1) * 7, 0, 6, 8, noteimg:getWidth(), noteimg:getHeight())
 	end
 
+	loading(5)
+
 	paintbirdimg = 
 	{
 		["left"] = {love.graphics.newImage("enemies/imageFile.png"), love.graphics.newImage("enemies/imageFile2.png")},
@@ -148,6 +163,8 @@ function love.load()
 	for k = 1, 3 do
 		paintbirdquads[k] = love.graphics.newQuad((k - 1) * 19, 0, 18, 13, paintbirdimg["left"][1]:getWidth(), paintbirdimg["left"][1]:getHeight())
 	end
+
+	loading(6)
 
 	background = {}
 	for k = 1, 8 do
@@ -159,6 +176,8 @@ function love.load()
 	for k = 1, 8 do
 		sudoquads[k] = love.graphics.newQuad((k - 1) * 15, 0, 14, 14, sudoimg:getWidth(), sudoimg:getHeight())
 	end
+
+	loading(7)
 
 	smokeimg = love.graphics.newImage("enemies/smoke.png")
 	smokequads = {}
@@ -175,6 +194,8 @@ function love.load()
 		end
 	end
 
+	loading(8)
+
 	documentimg = love.graphics.newImage("enemies/document.png")
 	documentquads = {}
 	for k = 1, 4 do
@@ -183,15 +204,20 @@ function love.load()
 
 	computerimg = love.graphics.newImage("graphics/computericon.png")
 
+	loading(9)
 
 	appsicon = love.graphics.newImage("graphics/ds.png")
 	
 	bannerimg = love.graphics.newImage("graphics/bannerbig.png")
 
+	loading(10)
+
 	gameoverimg = love.graphics.newImage("graphics/gameover.png")
 	introimg = love.graphics.newImage("graphics/intro.png")
 
 	saveimg = love.graphics.newImage("graphics/savebar.png")
+
+	loading(11)
 
 	bufferimg = love.graphics.newImage("graphics/buffer.png")
 	bufferquads = {}
@@ -201,6 +227,8 @@ function love.load()
 		end
 	end
 
+	loading(12)
+
 	cmdimg = love.graphics.newImage("enemies/powercmd.png")
 	cmdquads = {}
 	for k = 1, 5 do
@@ -208,6 +236,8 @@ function love.load()
 	end
 
 	hitpointimg = love.graphics.newImage("graphics/hitpoint.png")
+
+	loading(13, "map scripts")
 
 	--maps
 
@@ -219,7 +249,7 @@ function love.load()
 	end
 
 	mapScripts = {}
-	for k = 1, 4 do
+	for k = 1, 6 do
 		local f = open(myDirectory .. "/" .. k .. ".txt")
 		
 		if type(f) ~= "string" and f then
@@ -228,23 +258,35 @@ function love.load()
 		else
 			mapScripts[k] = f
 		end
+
+		loading(13 + k)
 	end
 
 	--audio
-	titlemusic = love.audio.newSource("audio/title.wav")
-	bossmusic = love.audio.newSource("audio/boss.wav")
+
+	loading(20, "music")
+
+	titlemusic = love.audio.newSource("audio/title.wav", "stream")
 	midbossmusic = love.audio.newSource("audio/midboss.wav")
+
+	loading(21, "sound effects")
 
 	consolesound = love.audio.newSource("audio/console.wav")
 	jumpsound = love.audio.newSource("audio/jump.wav")
+
 	playerspawn = love.audio.newSource("audio/playerspawn.wav")
 
 	gameoversnd = love.audio.newSource("audio/gameover.wav")
+
+	loading(22)
 
 	deathsnd = love.audio.newSource("audio/death.wav")
 
 	savesnd = love.audio.newSource("audio/save.wav")
 	blipsnd = love.audio.newSource("audio/blip.wav")
+
+	loading(23)
+
 	lifesnd = love.audio.newSource("audio/addlife.wav")
 
 	collectSnd = {}
@@ -252,12 +294,35 @@ function love.load()
 		collectSnd[k] = love.audio.newSource("audio/infect" .. k .. ".wav")
 	end
 
-	--FONTS
-	--other
-	consoleFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 16)
-	introFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 32)
+	loading(24)
+end
 
-	gameFunctions.changeState("intro")
+function loading(amount, t)
+	local p = (amount / 24) * 360
+	local time = love.timer.getTime() - startTime
+
+	love.graphics.origin()
+
+	love.graphics.setFont(consoleFont)
+
+	local data = t
+	if not t then
+		data = ".."
+	end
+
+	love.graphics.setScreen("top")
+
+	love.graphics.setColor(255, 255, 255)
+
+	love.graphics.print("> [ " .. round(time, 2) .. "s ]: Loading.. " .. data, 20, 194)
+
+	love.graphics.rectangle("fill", 20, 212, p, 8)
+
+	love.graphics.present()
+
+	if p == 360 then
+		gameFunctions.changeState("intro")
+	end
 end
 
 function savelog(data)
@@ -300,7 +365,7 @@ function love.errhand(msg)
 
     local trace = debug.traceback()
 
-    love.graphics.clear()
+    --love.graphics.clear()
     love.graphics.origin()
 	
 	if not consoleFont then
