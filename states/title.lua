@@ -1,4 +1,6 @@
 function title_init()
+	_PLAYERLIVES = 3
+	
 	titleStrings = 
 	{
 		function() gameFunctions.changeState("game") end,
@@ -6,17 +8,6 @@ function title_init()
 		--{"Quit", love.event.quit}, 
 		function() end
 	}
-
-	if not io.open("sdmc:/3ds/Hax0r/save.txt") then
-		noData = true
-	else
-		titleStrings[3] = function() 
-			if state ~= "game" then
-				state = "game" 
-			end 
-			game_init(true)
-		end
-	end
 	
 	love.graphics.setBackgroundColor(0, 128, 128)
 
@@ -29,7 +20,6 @@ function title_init()
 	{
 		createIcon(16, 16, "Web 95", "web", titleStrings[1]),
 		createIcon(16, 88, "My PC", "computer", titleStrings[2]),
-		createIcon(16, 160, "save.txt", "document", titleStrings[3])
 	}
 
 	if noData then
@@ -55,60 +45,6 @@ function title_update(dt)
 
 	backgroundtimer = backgroundtimer + 12 * dt
 	backgroundi = math.floor(backgroundtimer % 8) + 1
-
-	if waitTimer > 60 then
-		if not spawnPlayer then
-			waitTimer = 0
-			playerObject = player:new(9 * 16, 14 * 16, true)
-			spawnPlayer = true
-		end
-	else
-		waitTimer = waitTimer + dt
-	end
-
-	if spawnPlayer then
-		playerObject:update(dt)
-
-		playerObject.speedy = math.min(playerObject.speedy + playerObject.gravity * dt, 10 * 16)
-
-		playerObject.y = playerObject.y + playerObject.speedy * dt
-		playerObject.x = playerObject.x + playerObject.speedx * dt
-
-		if playerObject.y + playerObject.speedy * dt > 208 then
-			playerObject.y = 208
-			playerObject.speedy = 0
-			playerObject.jumping = false
-		end
-
-		if playerObject.x - playerObject.speedx * dt < 0 then
-			playerObject.speedx = 0
-			playerObject.x = 0
-		elseif playerObject.x + playerObject.width + playerObject.speedx * dt > 320 then
-			playerObject.speedx = 0
-			playerObject.x = 304
-		end
-
-		if spawnTimer > 0 then
-			spawnTimer = spawnTimer - dt
-		else
-			if #bitEnemies < 6 then
-				table.insert(bitEnemies, newBit(math.random(32, 288), math.random(7 * 16, 10 * 16)))
-			end
-			spawnTimer = math.random(3)
-		end
-
-		for k, v in ipairs(bitEnemies) do
-			v:update(dt)
-
-			if playerObject.speedy > 0 then
-				local obj = playerObject
-				if aabb(obj.x, obj.y + obj.speedy * dt, obj.width, obj.height, v.x, v.y, v.width, v.height) then
-					playerObject:jump(true)
-					table.remove(bitEnemies, k)
-				end
-			end
-		end
-	end
 end
 
 function title_draw()
@@ -141,14 +77,6 @@ function title_draw()
 	for k, v in ipairs(icons) do
 		v:draw()
 	end
-
-	if spawnPlayer then
-		playerObject:draw()
-
-		for k, v in ipairs(bitEnemies) do
-			v:draw()
-		end
-	end
 end
 
 function title_mousepressed(x, y, button)
@@ -170,40 +98,6 @@ end
 function title_keypressed(key)
 	if key == "b" then
 		love.event.quit()
-	end
-
-	if not playerObject then
-		return
-	end
-
-	if key == controls["left"] then
-		playerObject:moveleft(true)
-	elseif key == controls["right"] then
-		playerObject:moveright(true)
-	elseif key == controls["jump"] then
-		playerObject:jump()
-	elseif key ==  controls["up"] then
-		playerObject:moveup(true)
-	elseif key == controls["down"] then
-		playerObject:movedown(true)
-	elseif key == controls["dodge"][1] or key == controls["dodge"][2] then
-		playerObject:dodge()
-	end
-end
-
-function title_keyreleased(key)
-	if not playerObject then
-		return
-	end
-
-	if key == controls["left"] then
-		playerObject:moveleft(false)
-	elseif key == controls["right"] then
-		playerObject:moveright(false)
-	elseif key ==  controls["up"] then
-		playerObject:moveup(false)
-	elseif key == controls["down"] then
-		playerObject:movedown(false)
 	end
 end
 

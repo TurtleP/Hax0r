@@ -24,19 +24,11 @@ function credits_update(dt)
 	end
 end
 
-local virus = "    +     +  \n++\\+++/+\n++@+++@+\n+++++++++\n++++==+++\n+++++++++"
-
 function credits_draw()
 	love.graphics.setScreen("bottom")
 
 	love.graphics.setColor(255, 255, 255, 128)
-	local spacer = 2
-	local yy = 0
-	local t = virus:split("\n")
-	for i, v in ipairs(t) do
-		love.graphics.print(v, 2, 40 + yy)
-		yy = yy + consoleFont:getHeight() + spacer
-	end
+	love.graphics.draw(hax0r, love.graphics.getWidth() / 2 - hax0r:getWidth() / 2, love.graphics.getHeight() / 2 - hax0r:getHeight() / 2)
 
 	love.graphics.setColor(255, 255, 255, 255)
 

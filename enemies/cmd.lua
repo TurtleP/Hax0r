@@ -1,6 +1,6 @@
 cmd = class("cmd")
 
-function cmd:init(x, y, finalboss)
+function cmd:init(x, y)
 	self.x = x
 	self.y = y
 	self.width = 16
@@ -20,7 +20,6 @@ function cmd:init(x, y, finalboss)
 
 	self.direction = dir[math.random(2)]
 
-	print(self.direction)
 	self.speedx = 120 * self.direction
 	self.speedy = 0
 
@@ -31,10 +30,7 @@ function cmd:init(x, y, finalboss)
 	titlemusic:stop()
 
 	self.name = "PowerCMD"
-	self.song = bossmusic
-	if finalboss then
-		self.name = "System32"
-	end
+	self.song = midbossmusic
 
 	self.health = 4
 	self.maxhealth = 4
@@ -50,6 +46,8 @@ function cmd:init(x, y, finalboss)
 
 	self.attacks = {"rocket", "shoot"}
 
+	self.extensions = {t = "core", ext = {".exe", ".dll"}}
+
 	self.invincible = false
 	self.draws = true
 	self.invincibleTimer = 0
@@ -62,10 +60,6 @@ end
 function cmd:update(dt)
 	self.timer = self.timer + 8 * dt
 	self.quadi = self.animation[math.floor(self.timer % #self.animation) + 1]
-
-	if not self.song:isPlaying() then
-		self.song:play()
-	end
 
 	if self.start then
 		if self.y + self.height / 2 > gameFunctions.getHeight() * 0.40 then
@@ -228,48 +222,4 @@ function cmd:die()
 	midbossSong = nil
 	endBossSong = love.audio.newSource("audio/boss.wav")
 	game_Explode(self, nil, {0, 0, 0})
-end
-
-bullet = class("bullet")
-
-function bullet:init(x, y)
-	self.x = x
-	self.y = y
-
-	self.width = 2
-	self.height = 2
-
-	self.active = true
-	self.gravity = 0
-
-	local ply
-
-	if objects["player"][1] then
-		ply = objects["player"][1]
-	end
-
-	self.mask = {}
-	
-	local ang = math.atan2((ply.y - self.y), (ply.x - self.x))	
-	self.speedx = math.cos(ang) * 200
-	self.speedy = math.sin(ang) * 200
-end
-
-function bullet:update(dt)
-	if self.y > gameFunctions.getHeight() then
-		self.remove = true
-	end
-end
-
-function bullet:passiveCollide(name, data)
-	if name == "player" then
-		data:takeDamage(-1)
-		self.remove = true
-	end
-end
-
-function bullet:draw()
-	love.graphics.setColor(255, 255, 0, 255)
-	love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
-	love.graphics.setColor(255, 255, 255, 255)
 end

@@ -1,58 +1,37 @@
 function gameover_init()
+	love.audio.stop()
+	
 	gameoversnd:play()
 
-	gameoveroptions =
-	{
-		"Reload last save",
-		"Return to main menu"
-	}
+	love.graphics.setBackgroundColor(140, 0, 0)
 
-	selectioni = 2
-	if io.open("sdmc:/3ds/Hax0r/save.txt") then
-		selectioni = 1
-	end
-	minselect = selectioni
+	errorStrings =
+	{
+		"An error has occurred.",
+		"Press any key to cycle the power",
+		"and try again at a later time.",
+		"",
+		"",
+		"If this problem persists, please contact",
+		"the System Administator. For more details, check",
+		"the Operations Manual for the error code:",
+		"",
+		"0x5669 0x7275 0x7320 0x6465 0x6C65 0x7465",
+		"0x6420 0x6672 0x6F6D 0x2050 0x4300 0x0000"
+	}
 end
 
 function gameover_draw()
-	love.graphics.setFont(introFont)
-
 	love.graphics.setScreen("top")
-	love.graphics.draw(gameoverimg, gameFunctions.getWidth() / 2 - gameoverimg:getWidth() / 2, 60)
+	love.graphics.draw(gameoverimg, gameFunctions.getWidth() / 2 - gameoverimg:getWidth() / 2, gameFunctions.getHeight() / 2 - gameoverimg:getHeight() / 2)
 
+	love.graphics.setFont(consoleFont)
 	love.graphics.setScreen("bottom")
-
-	for k = 1, 2 do
-		if k == minselect then
-			love.graphics.setColor(255, 255, 255)
-		else
-			love.graphics.setColor(127, 127, 127)
-		end
-
-		love.graphics.print(gameoveroptions[k], gameFunctions.getWidth() / 2 - introFont:getWidth(gameoveroptions[k]) / 2, 90 + (k - 1) * 40)
+	for k = 1, #errorStrings do
+		love.graphics.print(errorStrings[k], love.graphics.getWidth() / 2 - consoleFont:getWidth(errorStrings[k]) / 2, 25 + (k - 1) * 18)
 	end
 end
 
 function gameover_keypressed(key)
-	if key == "cpaddown" then
-		if selectioni < #gameoveroptions then
-			selectioni = selectioni + 1
-		else
-			selectioni = minselect
-		end
-	elseif key == "cpadup" then
-		if selectioni > minselect then
-			selectioni = selectioni - 1
-		else
-			selectioni = #gameoveroptions
-		end
-	end
-
-	if key == "a" then
-		if selectioni == 1 then
-			game_saveLoad()
-		else
-			gameFunctions.changeState("title")
-		end
-	end
+	gameFunctions.changeState("title")
 end

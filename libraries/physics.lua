@@ -3,6 +3,7 @@
 	All code is mine.
 	(c) 2015 Tiny Turtle Industries
 	(Obviously same licensing as the game)
+	v1.2
 --]]
 
 function physicsupdate(dt)
@@ -15,7 +16,7 @@ function physicsupdate(dt)
 
 					local hor, ver = false, false 
 
-					objData.speedy = math.min(objData.speedy + objData.gravity * dt, 10 * 16) --add gravity to objects
+					objData.speedy = math.min(objData.speedy + objData.gravity * dt, 15 * 16) --add gravity to objects
 
 					for name2, object2T in pairs(obj) do
 						if objData.mask and objData.mask[name2] == true and not objData.passive then
@@ -84,20 +85,22 @@ function checkCollision(objTable, obj2Table, objData, objName, obj2Name, dt)
 				elseif aabb(objData.x + objData.speedx * dt, objData.y, objData.width, objData.height, obj2Data.x, obj2Data.y, obj2Data.width, obj2Data.height) then
 					hor = horizontalCollide(objName, objData, obj2Name, obj2Data)
 				else
-					--dat bug doe, some sort of dianal collision thing. gg Maurice.
-					--[[if (objData.speedy - objData.gravity * dt) > (objData.speedx) then
+					local g = 15 * 16 * dt
+					if objData.gravity then
+						g = objData.gravity
+					end
+					
+					if math.abs(objData.speedy - g) < math.abs(objData.speedx) then
 						ver = verticalCollide(objName, objData, obj2Name, obj2Data)
 					else
 						hor = horizontalCollide(objName, objData, obj2Name, obj2Data)
-					end]]
+					end
 				end
 
 			end
 
 		else 
 			checkPassive(objTable, obj2Table, objData, objName, obj2Name, dt)
-			hor = false
-			ver = false
 		end
 	end
 
@@ -105,24 +108,25 @@ function checkCollision(objTable, obj2Table, objData, objName, obj2Name, dt)
 end
 
 function horizontalCollide(objName, objData, obj2Name, obj2Data)
-	local changedspeed = true 
-
 	if objData.speedx > 0 then
 		if objData.rightCollide then --first object collision
-			changedspeed = objData:rightCollide(obj2Name, obj2Data)
-			if changedspeed ~= false then
+			if objData:rightCollide(obj2Name, obj2Data) ~= false then
+				if objData.speedx > 0 then
+					objData.speedx = 0
+				end
 				objData.x = obj2Data.x - objData.width
-				objData.speedx = 0
+				return true
 			end
 		else 
+			if objData.speedx < 0 then
+				objData.speedx = 0
+			end
 			objData.x = obj2Data.x - objData.width
-			objData.speedx = 0
-			changedspeed = true
+			return true
 		end	
 
 		if obj2Data.leftCollide then --opposing object collides
-			changedspeed = obj2Data:leftCollide(objName, objData) --Item 2 collides..
-			if changedspeed ~= false then
+			if obj2Data:leftCollide(objName, objData) ~= false then
 				if obj2Data.speedx < 0 then
 					obj2Data.speedx = 0
 				end
@@ -134,20 +138,24 @@ function horizontalCollide(objName, objData, obj2Name, obj2Data)
 		end
 	elseif objData.speedx < 0 then
 		if objData.leftCollide then
-			changedspeed = objData:leftCollide(obj2Name, obj2Data)
-			if changedspeed ~= false then
+			if objData:leftCollide(obj2Name, obj2Data) ~= false then
+				if objData.speedx < 0 then
+					objData.speedx = 0
+				end
 				objData.x = obj2Data.x + obj2Data.width
-				objData.speedx = 0
+				return true
 			end
 		else 
+			if objData.speedx < 0 then
+				objData.speedx = 0
+			end
 			objData.x = obj2Data.x + obj2Data.width
-			objData.speedx = 0
-			changedspeed = true
+			return true
 		end
 
 		if obj2Data.rightCollide then
-			changedspeed = obj2Data:rightCollide(objName, objData) --Item 2 collides..
-			if changedspeed ~= false then
+			--Item 2 collides..
+			if obj2Data:rightCollide(objName, objData) ~= false then
 				if obj2Data.speedx > 0 then
 					obj2Data.speedx = 0
 				end
@@ -159,29 +167,30 @@ function horizontalCollide(objName, objData, obj2Name, obj2Data)
 		end
 	end
 
-	return changedspeed
+	return false
 end
 
 function verticalCollide(objName, objData, obj2Name, obj2Data)
-	local changedspeed = true 
-
 	if objData.speedy > 0 then
 		if objData.downCollide then --first object collision
-			changedspeed = objData:downCollide(obj2Name, obj2Data)
-
-			if changedspeed ~= false then
+			if objData:downCollide(obj2Name, obj2Data) ~= false then
+				if objData.speedy > 0 then
+					objData.speedy = 0
+				end
 				objData.y = obj2Data.y - objData.height
-				objData.speedy = 0
+				return true
 			end
 		else 
+			if objData.speedy > 0 then
+				objData.speedy = 0
+			end
 			objData.y = obj2Data.y - objData.height
-			objData.speedy = 0
-			changedspeed = true
+			return true
 		end	
 
 		if obj2Data.upCollide then --opposing object collides
-			changedspeed = obj2Data:upCollide(objName, objData) --Item 2 collides..
-			if changedspeed ~= false then
+			--Item 2 collides..
+			if obj2Data:upCollide(objName, objData) ~= false then
 				if obj2Data.speedy < 0 then
 					obj2Data.speedy = 0
 				end
@@ -193,21 +202,24 @@ function verticalCollide(objName, objData, obj2Name, obj2Data)
 		end
 	elseif objData.speedy < 0 then
 		if objData.upCollide then
-			changedspeed = objData:upCollide(obj2Name, obj2Data)
-
-			if changedspeed ~= false then
+			if objData:upCollide(obj2Name, obj2Data) ~= false then
+				if objData.speedy < 0 then
+					objData.speedy = 0
+				end
 				objData.y = obj2Data.y + obj2Data.height
-				objData.speedy = 0
+				return true
 			end
 		else 
+			if objData.speedy < 0 then
+				objData.speedy = 0
+			end
 			objData.y = obj2Data.y + obj2Data.height
-			objData.speedy = 0
-			changedspeed = true
+			return true
 		end
 
 		if obj2Data.downCollide then
-			changedspeed = obj2Data:downCollide(objName, objData) --Item 2 collides..
-			if changedspeed ~= false then
+			--Item 2 collides..
+			if obj2Data:downCollide(objName, objData) ~= false then
 				if obj2Data.speedy > 0 then
 					obj2Data.speedy = 0
 				end
@@ -219,7 +231,7 @@ function verticalCollide(objName, objData, obj2Name, obj2Data)
 		end
 	end
 
-	return changedspeed
+	return false
 end
 
 function aabb(v1x, v1y, v1width, v1height, v2x, v2y, v2width, v2height)

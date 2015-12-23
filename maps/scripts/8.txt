@@ -1,0 +1,10 @@
+levelequals=16
+freezeplayer=
+console=That was close, we almost lost everything.
+wait=6
+console=Hold on, I'm getting interference from.. no way..
+wait=6
+shake=10
+console=I thought.. this can't be good.
+spawnBoss=
+unfreezeplayer=

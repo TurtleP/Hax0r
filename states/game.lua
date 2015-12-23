@@ -5,44 +5,40 @@ function game_init(loadSaveFile)
 		maps[k] = {map = require("maps/" .. k), name = _MAPNAMES[k]}
 	end
 
-	maps[15] = {map = require("maps/midboss"), name = "C:\\System32\\> PowerCMD"}
-
-	playerhealth = 5
-
-	eventSystem = eventsystem:new()
-
-	maplist = {}
-
-	currentMap = 1
-
-	maplist[15] = {maps[15], 15}
-
-	score = 0
+	playerhealth = 3
 
 	if not loadSaveFile then
-		maplist[1] = {maps[1], 1}
+		currentMap = 16
 
-		while (#maplist < 15) do
+		eventSystem = eventsystem:new()
+
+		score = 0
+
+		maplist = {}
+
+		maplist[1] = maps[1]
+
+		while (#maplist < 14) do
 			if #maps < 2 then
 				break
 			end
+
 			local rand = math.random(2, #maps)
-			if maps[rand].name ~= "C:\\System32\\> PowerCMD" then
-				table.insert(maplist, {maps[rand], rand})
+			if maps[rand].name ~= "C:\\PowerCore32\\> PowerCMD" and maps[rand].name ~= "System Core" then
+				print(maps[rand].name)
+				table.insert(maplist, maps[rand])
 				table.remove(maps, rand)
 			end
 		end
-	else
-		saveGame(true)
 	end
+
+	maplist[15] = {map = require("maps/midboss"), name = "C:\\PowerCore32\\> PowerCMD"}
+	maplist[16] = {map = require("maps/finalboss"), name = "System Core"}
 
 
 	loadMap(currentMap)
 
 	paused = false
-
-	mapscrollx = 0
-	mapscrolly = 0
 
 	mapFade = 0
 
@@ -55,14 +51,10 @@ function game_init(loadSaveFile)
 	pointsAdd = false
 	pointsAddTimer = 0
 	scoreAdd = 0
-
-	savingGame = false
-	bufferquadi = 1
-	buffertimer = 0
-	savetimer = 0
-	savei = 0
 	
 	love.graphics.setBackgroundColor(0, 80, 80)
+
+	shakeIntensity = 0
 end
 
 function fixTerminalData(tofixtext, maxLength)
@@ -89,9 +81,17 @@ function game_update(dt)
 		return
 	end
 
+	if shakeIntensity > 0 then
+		shakeIntensity = shakeIntensity - 10 * dt
+	end
+
 	if not objects["boss"][1] then
 		if not titlemusic:isPlaying() then
 			titlemusic:play()
+		end
+	else
+		if not objects["boss"][1].song:isPlaying() then
+			objects["boss"][1].song:play()
 		end
 	end
 
@@ -130,26 +130,6 @@ function game_update(dt)
 
 		if v.remove then
 			table.remove(consoles, k)
-		end
-	end
-
-	if savingGame then
-		buffertimer = math.min(buffertimer + 8*dt)
-		bufferquadi = math.floor(buffertimer%16)+1
-
-		if savetimer < 1 then
-			savetimer = savetimer + dt
-		else
-			savetimer = 0
-			savei = savei + 1
-		end
-
-		if savei == 10 then
-			saveGame(false, true)
-			
-			savetimer = 0
-			savei = 0
-			savingGame = false
 		end
 	end
 
@@ -202,6 +182,10 @@ function game_draw()
 
 	love.graphics.setScreen("top")
 
+	if shakeIntensity > 0 then
+		love.graphics.translate( (love.math.random() * 2 - 1) * shakeIntensity, (love.math.random() * 2 - 1) * shakeIntensity ) 
+	end
+
 	love.graphics.setColor(255, 255, 255, 255)
 	for k, v in pairs(objects) do
 		for j, w in pairs(v) do
@@ -247,34 +231,19 @@ function game_draw()
 	--if homebrewMode then
 		love.graphics.setScreen("bottom")
 
-		local state, percent = love.system.getPowerInfo()
 		local batteryimg = UIIcons["battery"][1]
+
+		local batteryLeft = _PLAYERLIVES
 
 		local batteryColor = {0, 127, 14}
 		local percentColor = {0, 155, 15}
 
-		local batteryLeft = percent
-		
-		if state == "charging" then
+		if batteryLeft == 2 then
 			percentColor = {255, 106, 0}
 			batteryColor = {196, 78, 0}
-		end
-
-		if not batteryLeft then
-			batteryLeft = 0
-		end
-
-		if state ~= "charging" then
-			if batteryLeft > 50 and batteryLeft < 75 then
-				percentColor = {219, 182, 0}
-				batteryColor = {193, 161, 0}
-			elseif batteryLeft > 25 and batteryLeft < 50 then
-				percentColor = {255, 106, 0}
-				batteryColor = {196, 78, 0}
-			elseif batteryLeft < 25 then
-				percentColor = {232, 0, 0}
-				batteryColor = {190, 0, 0}
-			end
+		elseif batteryLeft < 2 then
+			percentColor = {232, 0, 0}
+			batteryColor = {190, 0, 0}
 		end
 
 		love.graphics.setColor(32, 32, 32)
@@ -289,17 +258,15 @@ function game_draw()
 		love.graphics.draw(batteryimg, 2, gameFunctions.getHeight() - batteryimg:getHeight() - 2)
 
 		love.graphics.setColor(unpack(percentColor))
-		love.graphics.rectangle("fill", 5, (gameFunctions.getHeight() - batteryimg:getHeight() - 2) + 2, (batteryLeft / 100) * 14, 9)
-
-		if state == "charging" then
-			love.graphics.draw(UIIcons["battery"][2], 2, gameFunctions.getHeight() - batteryimg:getHeight() - 2)
+		for k = 1, batteryLeft do
+			love.graphics.rectangle("fill", 5 + (k - 1) * 5, (gameFunctions.getHeight() - batteryimg:getHeight() - 2) + 2, 4, 10)
 		end
 
 		love.graphics.setColor(255, 255, 255)
 		love.graphics.print(os.date("%I:%M %p"), gameFunctions.getWidth() - consoleFont:getWidth(os.date("%I:%M %p")) - 2, gameFunctions.getHeight() - consoleFont:getHeight(os.date("%I:%M %p")) - 1)
 		
 		if objects["player"][1] then
-			love.graphics.draw(UIIcons["health"]["img"], UIIcons["health"]["quads"][math.min(objects["player"][1].health + 1, 6)], 2, 1)
+			love.graphics.draw(UIIcons["health"]["img"], UIIcons["health"]["quads"][math.min(objects["player"][1].health + 1, 4)], 2, 1)
 		else
 			love.graphics.draw(UIIcons["health"]["img"], UIIcons["health"]["quads"][1], 2, 1)
 		end
@@ -308,13 +275,11 @@ function game_draw()
 
 		local scoreType = getScoreType(score)
 		local cmd = "user@H@x0rPC:~$ Infected: " .. round(convert(score, scoreType), 2) .. scoreType .. "/48MB"
-		love.graphics.print(cmd, 0, 20)
+		love.graphics.print(cmd, 0, 18)
 
 		love.graphics.setColor(255, 255, 255, 255 * math.sin(datablinktimer))
-		love.graphics.print("_", consoleFont:getWidth(cmd) + consoleFont:getWidth("_") / 2, 20)
+		love.graphics.print("_", consoleFont:getWidth(cmd) + consoleFont:getWidth("_") / 2, 18)
 		love.graphics.setColor(255, 255, 255, 255)
-
-		love.graphics.print(round(collectgarbage("count") / 1024, 2) .. "MB of RAM", 0, 38)
 
 		local spacer = 5
 		local yy = 0
@@ -349,19 +314,14 @@ function game_keypressed(key)
 	if key == controls["pause"] then
 		if not gameover then
 			paused = not paused
-		else
-			gameFunctions.changeState("game")
-		end
-	end
 
-	if key == "select" then
-		if paused then
-			gameFunctions.changeState("title")
+			if paused then
+				pausesnd:play()
+				if key == controls["back"] then
+					gameFunctions.changeState("title")
+				end
+			end
 		end
-	end
-
-	if key == "select" then
-		savingGame = true
 	end
 
 	if consoles[1] then
@@ -397,13 +357,6 @@ function game_mousepressed(x, y, button)
 end
 
 function game_keyreleased(key)
-	
-	if key == "select" then
-		savingGame = false
-		savetimer = 0
-		savei = 0
-	end
-
 	if consoles[1] then
 		if key == "x" then
 			consoles[1]:keyup()
@@ -477,6 +430,8 @@ function game_Explode(self, other, color)
 		min, max = 40, 50
 	elseif t == "document" then
 		min, max = 140, 160
+	else
+		min, max = 10240, 10240 --ye 10MB
 	end
 
 	local objData = math.random(min, max)
@@ -486,7 +441,7 @@ function game_Explode(self, other, color)
 
 	pointsAdd = true
 
-	--[[for i, v in pairs(str) do
+	for i, v in pairs(str) do
 		table.insert(terminalstrings, v)
 	end
 
@@ -494,7 +449,7 @@ function game_Explode(self, other, color)
 		for k = 2, 1, -1 do
 			table.remove(terminalstrings, k)
 		end
-	end]]
+	end
 
 	collectSnd[math.random(#collectSnd)]:play()
 
@@ -534,15 +489,18 @@ function loadMap(mapn)
 	objects["boss"] = {}
 	
 	objects["barrier"] = {}
+	objects["beam"] = {}
+	objects["bullet"] = {}
+	objects["laser"] = {}
 
 	consoles = {}
-	
+
 	if not maplist[mapn] then
 		gameFunctions.changeState("gameover")
 		return
 	end
 
-	map = maplist[mapn][1].map
+	map = maplist[mapn].map
 	currentMap = mapn
 
 	makeTiles(map)
@@ -577,7 +535,7 @@ function loadMap(mapn)
 		objects["player"][1] = player:new(playerX, playerY, false, playerhealth)
 	end
 
-	roomSign = roomsign:new(maplist[mapn][1].name)
+	roomSign = roomsign:new(maplist[mapn].name)
 
 	if mapScripts[currentScript] then
 		eventSystem:decrypt(mapScripts[currentScript])
@@ -585,6 +543,9 @@ function loadMap(mapn)
 
 	objects["barrier"][1] = barrier:new(0, -16, 400, 16)
 	objects["barrier"][2] = barrier:new(-16, 0, 16, 240)
+
+	objects["barrier"][3] = barrier:new(416, 0, 16, 240)
+	objects["barrier"][4] = barrier:new(0, 240, 400, 16)
 end
 
 function makeTiles(mapData)
@@ -682,66 +643,6 @@ function makeTiles(mapData)
 	for index, value in pairs(pos) do
 		for k = 1, #pos[index] do
 			objects["tile"][pos[index][k][1] .. "-" .. pos[index][k][2]] = tile:new((pos[index][k][1] - 1) * 16, (pos[index][k][2] - 1) * 16, pos[index][k][3], pos[index][k][4], index)
-		end
-	end
-end
-
-function saveGame(load, temp)
-	local path = "sdmc:/3ds/Hax0r/save.txt"
-	if not load then
-		local file = io.open(path, "w")
-
-		local status = 1
-
-		if file then
-			local mapValues = "return {temp = " .. tostring(temp) .. ", maplist = {"
-			for k = 1, #maplist do
-				mapValues = mapValues .. maplist[k][2] .. ","
-			end
-			mapValues = mapValues .. "}, mapnum =" .. currentMap .. ", score = " .. score .. ", currentScript = " .. currentScript .."}"
-
-			file:write(mapValues)
-			file:flush()
-			file:close()
-
-			savesnd:play()
-		else
-			status = 0
-			blipsnd:play()
-		end
-
-		eventSystem:queue("terminaladd", "VIRUS [H@x0r] saved to RAM with status: " .. status)
-	else
-		local file = io.open(path, "r")
-
-		local splitSemi = loadstring(file:read())()
-
-		if not splitSemi then
-			os.remove(path)
-			return
-		end
-
-		local pass = false
-		for k, v in pairs(splitSemi) do
-			if k == "maplist" then
-				for j = 1, #v do
-					maplist[j] = {maps[tonumber(v[j])], tonumber(v[j])}
-				end
-			elseif k == "mapnum" then
-				currentMap = tonumber(v)
-			elseif k == "score" then
-				score = tonumber(v)
-			elseif k == "currentScript" then
-				currentScript = tonumber(v)
-			elseif k == "temp" then
-				pass = true
-			end
-		end
-
-		if #maplist > 0 and score and currentMap then
-			if pass then
-				os.remove(path)
-			end
 		end
 	end
 end

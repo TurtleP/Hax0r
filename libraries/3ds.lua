@@ -26,18 +26,18 @@
 --[[Key Config:]]
 local config = {}
 --L&R Buttons
-config["lbutton"] = "q"
-config["rbutton"] = "e"
+config["lbutton"] = "lctrl"
+config["rbutton"] = " "
 
 --ZL&ZR Buttons
 config["lzbutton"] = "1"
 config["rzbutton"] = "3"
 
 --Circlepad
-config["cpadup"] = "w"
-config["cpaddown"] = "s"
-config["cpadleft"] = "a"
-config["cpadright"] = "d"
+config["cpadup"] = "up"
+config["cpaddown"] = "down"
+config["cpadleft"] = "left"
+config["cpadright"] = "right"
 
 --Dpad
 config["dup"] = ""
@@ -52,10 +52,10 @@ config["cstickleft"] = "kp4"
 config["cstickright"] = "kp6"
 
 --The Face Buttons
-config["a"] = "u"
-config["b"] = "i"
-config["x"] = "o"
-config["y"] = "p"
+config["a"] = "z"
+config["b"] = "x"
+config["x"] = "c"
+config["y"] = "v"
 
 --Start & Select
 config["start"] = "return"
@@ -95,17 +95,17 @@ function love.graphics.clear()
 	oldclear()
 end
 
-local oldisdown = love.keyboard.isDown
+--[[local oldisdown = love.keyboard.isDown
 function love.keyboard.isDown(...)
 	local arg = {...}
 	for i=1, #arg do
-		if config[arg[i]] then
-			if oldisdown(config[arg[i]]) then
+		if config[arg[i] then
+			if oldisdown(config[arg[i]) then
 				return true
 			end
 		end
 	end
-end
+end]]
 
 local oldgetWidth = love.graphics.getWidth
 function love.graphics.getWidth()
@@ -131,7 +131,7 @@ function love.graphics.getHeight() return 240 end
 local oldgetDimensions = love.graphics.getDimensions
 function love.graphics.getDimensions() return love.graphics.getWidth(),240 end
 
-local oldsetColor = love.graphics.setColor
+--[[local oldsetColor = love.graphics.setColor
 function love.graphics.setColor(r,g,b,a)
 	local r2,g2,b2,a2 = love.graphics.getColor()
 	local ra
@@ -141,7 +141,7 @@ function love.graphics.setColor(r,g,b,a)
 		ra = a2
 	end
 	oldsetColor(r,g,b,ra)
-end
+end]]
 
 local olddraw = love.graphics.draw
 function love.graphics.draw(image, quad, x, y, r)
@@ -211,7 +211,7 @@ if love.mousereleased then
 	end
 end
 
-if love.keypressed then
+--[[if love.keypressed then
 	local oldkeypress = love.keypressed
 	
 	function love.keypressed(key,r)
@@ -245,7 +245,7 @@ if love.keyreleased then
 			oldkeyrelease(button,r)
 		end
 	end
-end
+end]]
 
 if love.draw then
 	local olddraw = love.draw

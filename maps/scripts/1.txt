@@ -1,3 +1,4 @@
+levelequals=1
 console=Alright.. so this goes here..
 wait=6
 console=... and this needs to be secured..

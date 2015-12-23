@@ -4,21 +4,12 @@ function eventsystem:init()
 	self.sleep = 0
 	self.i = 0
 	self.events = {}
-	currentScript = 1
+	currentScript = 8
 	self.running = true
 end
 
 function eventsystem:update(dt)
 	if self.i < #self.events then
-		--[[
-			local add = 0
-			if consoles[1] then
-				if consoles[1].speedup then
-					add = 0.04
-				end
-			end
-		--]]
-
 		if self.sleep > 0 then
 			self.sleep = math.max(0, self.sleep - dt)
 		end
@@ -48,6 +39,14 @@ function eventsystem:update(dt)
 				for i, v in pairs(data) do
 					table.insert(terminalstrings, v)
 				end
+			elseif v.cmd == "spawnBoss" then
+				objects["boss"][1] = core:new(12 * 16, 6 * 16)
+			elseif v.cmd == "shake" then
+				shakeIntensity = tonumber(v.args)
+			elseif v.cmd == "changeState" then
+				gameFunctions.changeState(v.args)
+			elseif v.cmd == "killPlayer" then
+				objects["player"][1]:ide(true)
 			end
 		end
 	else

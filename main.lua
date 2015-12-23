@@ -3,17 +3,14 @@ class = require 'libraries/middleclass'
 require 'data'
 
 require 'classes/console'
-require 'classes/pausemenu'
 require 'classes/player'
 require 'classes/tile'
-require 'classes/antivirus'
-require 'classes/bitenemy'
 require 'classes/firewall'
-require 'classes/proxy'
 require 'classes/map'
 require 'classes/roomsign'
 require 'classes/healthitem'
 require 'classes/barrier'
+require 'classes/bullet'
 
 require 'libraries/event'
 require 'libraries/physics'
@@ -33,8 +30,7 @@ require 'enemies/sudo'
 require 'enemies/webexplore'
 require 'enemies/document'
 require 'enemies/cmd'
-
-require 'classes/bitenemy'
+require 'enemies/core'
 
 --[[
 	So as long as you stick to the lisence I will not try to hunt you down. That means you CAN modify the game but CANNOT reditribute the game as profit.
@@ -76,14 +72,72 @@ function love.load()
 		math.random = love.math.random
 
 		require 'libraries/3ds'
+
+		controls["right"] = "right"
+		controls["left"] = "left"
+		controls["up"] = "up"
+		controls["down"] = "down"
+
+		controls["jump"] = "z"
+		controls["pause"] = "return"
+		controls["dodge"] = {"lctrl", " "}
+
+		require 'libraries/joystick'
+
+		local oldAdd = love.joystickadded
+		love.joystickadded = function(joyStick)
+			oldAdd(joyStick)
+
+			getJoystick(1).doAxis = function(self, axis, value)
+				if axis == "leftx" then
+					if value > 0.5 then
+						love.keypressed(controls["right"])
+						love.keyreleased(controls["left"])
+					elseif value < -0.5 then
+						love.keypressed(controls["left"])
+						love.keyreleased(controls["right"])
+					elseif value >= -0.5 or value <= 0.5 then
+						love.keyreleased(controls["right"])
+						love.keyreleased(controls["left"])
+					end
+				elseif axis == "lefty" then
+					if value > 0.5 then
+						love.keypressed(controls["down"])
+						love.keyreleased(controls["up"])
+					elseif value < -0.5 then
+						love.keypressed(controls["up"])
+						love.keyreleased(controls["down"])
+					elseif value >= -0.5 or value <= 0.5 then
+						love.keyreleased(controls["up"])
+						love.keyreleased(controls["down"])
+					end
+				end
+			end
+
+			getJoystick(1).doPressed = function(self, button)
+				if button == "a" then
+					love.keypressed(controls["jump"])
+				end
+
+				if button == "leftshoulder" or button == "rightshoulder" then
+					love.keypressed(controls["dodge"][1])
+				end
+
+				if button == "start" then
+					love.keypressed(controls["pause"])
+				end
+
+				if button == "x" then
+					love.keypressed("x")
+				end
+			end
+		end
 	else
 		math.randomseed(os.time())
 	end
 
 	consoleFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 16)
 	introFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 32)
-
-	loading(0, "graphics")
 
 	titleimg = love.graphics.newImage("graphics/title.png")
 
@@ -96,11 +150,9 @@ function love.load()
 		["power"] = love.graphics.newImage("graphics/interface/power.png")
 	}
 
-	for k = 1, 6 do
-		UIIcons["health"]["quads"][k] = love.graphics.newQuad((k - 1) * 20, 0, 19, 16, UIIcons["health"]["img"]:getWidth(), 16)
+	for k = 1, 4 do
+		UIIcons["health"]["quads"][k] = love.graphics.newQuad((k - 1) * 18, 0, 18, 18, UIIcons["health"]["img"]:getWidth(), 18)
 	end
-
-	loading(1)
 
 	playerimg = love.graphics.newImage("graphics/player-new.png")
 	playerquads = {}
@@ -114,8 +166,6 @@ function love.load()
 		firewallquads[k] = love.graphics.newQuad((k - 1) * 17, 0, 16, 16, firewallimg:getWidth(), firewallimg:getHeight()) 
 	end
 
-	loading(2)
-
 	waterimg = love.graphics.newImage("graphics/digitalsea.png")
 	waterquads = {}
 	for k = 1, 6 do
@@ -128,8 +178,6 @@ function love.load()
 		deathquads[k] = love.graphics.newQuad((k - 1) * 17, 0, 16, 16, deathimg:getWidth(), deathimg:getHeight())
 	end
 
-	loading(3)
-
 	waterbaseimg = love.graphics.newImage("graphics/seatile.png")
 
 	executionerimg = {love.graphics.newImage("enemies/executioner.png"), love.graphics.newImage("enemies/executionerFlip.png")}
@@ -137,8 +185,6 @@ function love.load()
 	for k = 1, 5 do
 		executionerquads[k] = love.graphics.newQuad((k - 1) * 22, 0, 21, 29, executionerimg[1]:getWidth(), executionerimg[1]:getHeight())
 	end
-
-	loading(4)
 	
 	musicimg = love.graphics.newImage("enemies/musicFile.png")
 	musicquads = {}
@@ -152,8 +198,6 @@ function love.load()
 		notequads[k] = love.graphics.newQuad((k - 1) * 7, 0, 6, 8, noteimg:getWidth(), noteimg:getHeight())
 	end
 
-	loading(5)
-
 	paintbirdimg = 
 	{
 		["left"] = {love.graphics.newImage("enemies/imageFile.png"), love.graphics.newImage("enemies/imageFile2.png")},
@@ -163,8 +207,6 @@ function love.load()
 	for k = 1, 3 do
 		paintbirdquads[k] = love.graphics.newQuad((k - 1) * 19, 0, 18, 13, paintbirdimg["left"][1]:getWidth(), paintbirdimg["left"][1]:getHeight())
 	end
-
-	loading(6)
 
 	background = {}
 	for k = 1, 8 do
@@ -176,8 +218,6 @@ function love.load()
 	for k = 1, 8 do
 		sudoquads[k] = love.graphics.newQuad((k - 1) * 15, 0, 14, 14, sudoimg:getWidth(), sudoimg:getHeight())
 	end
-
-	loading(7)
 
 	smokeimg = love.graphics.newImage("enemies/smoke.png")
 	smokequads = {}
@@ -194,8 +234,6 @@ function love.load()
 		end
 	end
 
-	loading(8)
-
 	documentimg = love.graphics.newImage("enemies/document.png")
 	documentquads = {}
 	for k = 1, 4 do
@@ -204,20 +242,16 @@ function love.load()
 
 	computerimg = love.graphics.newImage("graphics/computericon.png")
 
-	loading(9)
-
 	appsicon = love.graphics.newImage("graphics/ds.png")
 	
-	bannerimg = love.graphics.newImage("graphics/bannerbig.png")
-
-	loading(10)
+	bannerimg = love.graphics.newImage("graphics/lovepotionbanner.png")
 
 	gameoverimg = love.graphics.newImage("graphics/gameover.png")
 	introimg = love.graphics.newImage("graphics/intro.png")
 
 	saveimg = love.graphics.newImage("graphics/savebar.png")
 
-	loading(11)
+	hax0r = love.graphics.newImage("graphics/hax0r.png")
 
 	bufferimg = love.graphics.newImage("graphics/buffer.png")
 	bufferquads = {}
@@ -227,17 +261,15 @@ function love.load()
 		end
 	end
 
-	loading(12)
-
 	cmdimg = love.graphics.newImage("enemies/powercmd.png")
 	cmdquads = {}
 	for k = 1, 5 do
 		cmdquads[k] = love.graphics.newQuad((k - 1) * 17, 0, 16, 16, cmdimg:getWidth(), cmdimg:getHeight())
 	end
+	coreimg = love.graphics.newImage("enemies/system32.png")
+	corestart = love.graphics.newImage("enemies/powercmdrise.png")
 
 	hitpointimg = love.graphics.newImage("graphics/hitpoint.png")
-
-	loading(13, "map scripts")
 
 	--maps
 
@@ -249,27 +281,24 @@ function love.load()
 	end
 
 	mapScripts = {}
-	for k = 1, 6 do
+	for k = 1, 9 do
 		local f = open(myDirectory .. "/" .. k .. ".txt")
 		
 		if type(f) ~= "string" and f then
 			mapScripts[k] = f:read("*a")
-			f:close()
+
+			if io.read() == nil then
+				f:close()
+			end
 		else
 			mapScripts[k] = f
 		end
-
-		loading(13 + k)
 	end
 
 	--audio
 
-	loading(20, "music")
-
 	titlemusic = love.audio.newSource("audio/title.wav", "stream")
 	midbossmusic = love.audio.newSource("audio/midboss.wav")
-
-	loading(21, "sound effects")
 
 	consolesound = love.audio.newSource("audio/console.wav")
 	jumpsound = love.audio.newSource("audio/jump.wav")
@@ -278,51 +307,30 @@ function love.load()
 
 	gameoversnd = love.audio.newSource("audio/gameover.wav")
 
-	loading(22)
-
 	deathsnd = love.audio.newSource("audio/death.wav")
+	shootsnd = love.audio.newSource("audio/shoot.wav")
 
-	savesnd = love.audio.newSource("audio/save.wav")
-	blipsnd = love.audio.newSource("audio/blip.wav")
-
-	loading(23)
+	bossspawnsnd = love.audio.newSource("audio/bossspawn.wav")
 
 	lifesnd = love.audio.newSource("audio/addlife.wav")
+	pausesnd = love.audio.newSource("audio/pause.wav")
+	lasersnd = love.audio.newSource("audio/laser.wav")
+	bossdiesnd = love.audio.newSource("audio/bossdie.wav")
+
+	rebootsnd = love.audio.newSource("audio/reboot.wav")
+	errorsnd = love.audio.newSource("audio/error.wav")
 
 	collectSnd = {}
 	for k = 1, 3 do
 		collectSnd[k] = love.audio.newSource("audio/infect" .. k .. ".wav")
 	end
 
-	loading(24)
-end
-
-function loading(amount, t)
-	local p = (amount / 24) * 360
-	local time = love.timer.getTime() - startTime
-
-	love.graphics.origin()
-
-	love.graphics.setFont(consoleFont)
-
-	local data = t
-	if not t then
-		data = ".."
+	hurtsnd = {}
+	for k = 1, 3 do
+		hurtsnd[k] = love.audio.newSource("audio/hurt" .. k .. ".wav")
 	end
 
-	love.graphics.setScreen("top")
-
-	love.graphics.setColor(255, 255, 255)
-
-	love.graphics.print("> [ " .. round(time, 2) .. "s ]: Loading.. " .. data, 20, 194)
-
-	love.graphics.rectangle("fill", 20, 212, p, 8)
-
-	love.graphics.present()
-
-	if p == 360 then
-		gameFunctions.changeState("intro")
-	end
+	gameFunctions.changeState("intro")
 end
 
 function savelog(data)
