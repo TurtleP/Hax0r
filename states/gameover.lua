@@ -24,7 +24,7 @@ end
 function gameover_draw()
 	love.graphics.setScreen("top")
 	love.graphics.draw(gameoverimg, gameFunctions.getWidth() / 2 - gameoverimg:getWidth() / 2, gameFunctions.getHeight() / 2 - gameoverimg:getHeight() / 2)
-
+	
 	love.graphics.setFont(consoleFont)
 	love.graphics.setScreen("bottom")
 	for k = 1, #errorStrings do

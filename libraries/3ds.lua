@@ -90,22 +90,10 @@ function love.graphics.getScreen() return screen end
 
 --Regular Functions
 local oldclear = love.graphics.clear
-function love.graphics.clear()
+function love.graphics.clear(r, g, b, a)
 	love.graphics.setScissor()
-	oldclear()
+	oldclear(r, g, b, a)
 end
-
---[[local oldisdown = love.keyboard.isDown
-function love.keyboard.isDown(...)
-	local arg = {...}
-	for i=1, #arg do
-		if config[arg[i] then
-			if oldisdown(config[arg[i]) then
-				return true
-			end
-		end
-	end
-end]]
 
 local oldgetWidth = love.graphics.getWidth
 function love.graphics.getWidth()
@@ -131,18 +119,6 @@ function love.graphics.getHeight() return 240 end
 local oldgetDimensions = love.graphics.getDimensions
 function love.graphics.getDimensions() return love.graphics.getWidth(),240 end
 
---[[local oldsetColor = love.graphics.setColor
-function love.graphics.setColor(r,g,b,a)
-	local r2,g2,b2,a2 = love.graphics.getColor()
-	local ra
-	if a then
-		ra = a
-	else
-		ra = a2
-	end
-	oldsetColor(r,g,b,ra)
-end]]
-
 local olddraw = love.graphics.draw
 function love.graphics.draw(image, quad, x, y, r)
 	if r then
@@ -159,7 +135,6 @@ function love.graphics.draw(image, quad, x, y, r)
 end
 
 function love.window.getDisplayCount() return 2 end
---function love.system.getOS() return "3ds" end
 
 local oldgetMouseX = love.mouse.getX
 function love.mouse.getX()
@@ -186,7 +161,8 @@ if love.mousepressed then
 
 	local oldmousepress = love.mousepressed
 	function love.mousepressed(x,y,b)
-		if b == "l" then
+		if b == 1 then
+			b = "l"
 			oldmousepress(clamp(x-40,0,320),clamp(y-240,0,240),"l")
 		end
 	end
@@ -205,7 +181,8 @@ if love.mousereleased then
 
 	local oldmousepress = love.mousereleased
 	function love.mousereleased(x,y,b)
-		if b == "l" then
+		if b == 1 then
+			b = "l"
 			oldmousepress(clamp(x-40,0,320),clamp(y-240,0,240),"l")
 		end
 	end

@@ -37,6 +37,7 @@ function convert(a, format)
 	local f = format:lower()
 
 	if f == "mb" then
+		scoreRate = scoreAdd / 4
 		return a / 1024
 	else
 		return a

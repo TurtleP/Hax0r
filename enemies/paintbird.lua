@@ -176,6 +176,12 @@ function paintdrop:init(x, y, parent, speedx, speedy, spawnachild, width, height
 	self.damage = damage
 end
 
+function paintdrop:update(dt)
+	if self.y > love.graphics.getHeight() then
+		self.remove = true
+	end
+end
+
 function paintdrop:draw()
 	local color = {255, 255, 255}
 	if self.parent then

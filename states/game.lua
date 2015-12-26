@@ -8,7 +8,7 @@ function game_init(loadSaveFile)
 	playerhealth = 3
 
 	if not loadSaveFile then
-		currentMap = 16
+		currentMap = 1
 
 		eventSystem = eventsystem:new()
 
@@ -55,6 +55,8 @@ function game_init(loadSaveFile)
 	love.graphics.setBackgroundColor(0, 80, 80)
 
 	shakeIntensity = 0
+	pointsRate = 0.01
+	scoreRate = 1
 end
 
 function fixTerminalData(tofixtext, maxLength)
@@ -77,14 +79,6 @@ function fixTerminalData(tofixtext, maxLength)
 end
 
 function game_update(dt)
-	if paused then
-		return
-	end
-
-	if shakeIntensity > 0 then
-		shakeIntensity = shakeIntensity - 10 * dt
-	end
-
 	if not objects["boss"][1] then
 		if not titlemusic:isPlaying() then
 			titlemusic:play()
@@ -95,6 +89,14 @@ function game_update(dt)
 		end
 	end
 
+	if paused then
+		return
+	end
+
+	if shakeIntensity > 0 then
+		shakeIntensity = shakeIntensity - 10 * dt
+	end
+
 	eventSystem:update(dt)
 
 	physicsupdate(dt)
@@ -103,18 +105,16 @@ function game_update(dt)
 		for j, w in pairs(v) do
 			if w.remove then
 				table.remove(objects[k], j)
-
-				if currentMap ~= 1 then
-					if k ~= "tile" and k ~= "firewall" and k ~= "player" then
-						if getEnemyCount() == 0 then
-							if objects["firewall"][1] then
-								objects["firewall"][1]:fade()
-							end
-						end 
-					end
-				end
 			end
 		end
+	end
+
+	if currentMap ~= 1 then
+		if getEnemyCount() == 0 and not eventSystem.running then
+			if objects["firewall"][1] then
+				objects["firewall"][1]:fade()
+			end
+		end 
 	end
 
 	for k, v in pairs(objects) do
@@ -143,11 +143,11 @@ function game_update(dt)
 			pointsAdd = false
 		end
 
-		if pointsAddTimer < 0.01 then
+		if pointsAddTimer < pointsRate then
 			pointsAddTimer = pointsAddTimer + dt
 		else
 			if math.abs(scoreAdd - score) ~= 0 then
-				score = score + 1
+				score = math.min(score + scoreRate, scoreAdd, 48000)
 			else
 				pointsAdd = false
 			end
@@ -183,7 +183,7 @@ function game_draw()
 	love.graphics.setScreen("top")
 
 	if shakeIntensity > 0 then
-		love.graphics.translate( (love.math.random() * 2 - 1) * shakeIntensity, (love.math.random() * 2 - 1) * shakeIntensity ) 
+		love.graphics.translate( (math.random() * 2 - 1) * shakeIntensity, (math.random() * 2 - 1) * shakeIntensity ) 
 	end
 
 	love.graphics.setColor(255, 255, 255, 255)
@@ -196,19 +196,6 @@ function game_draw()
 	end
 
 	love.graphics.setColor(255, 255, 255, 255)
-	if savingGame then
-		love.graphics.draw(bufferimg, bufferquads[bufferquadi], gameFunctions.getWidth() / 2 - 72, gameFunctions.getHeight() / 2 - 20)
-
-		love.graphics.draw(saveimg, (gameFunctions.getWidth() / 2 - 72) + 44, (gameFunctions.getHeight() / 2 - 20) + 20 - 8)
-
-		love.graphics.setColor(9, 36, 105)
-		for k = 1, math.min(10, savei) do
-			love.graphics.rectangle("fill", (gameFunctions.getWidth() / 2 - 72) + 46 + (k - 1) * 10, ((gameFunctions.getHeight() / 2 - 20) + 20 - 8) + 2, 8, 12)
-		end
-
-		love.graphics.setColor(0, 0, 0)
-		love.graphics.print("Saving..", (gameFunctions.getWidth() / 2 - 72) + 46, ((gameFunctions.getHeight() / 2 - 20) + 20 - 8) - 18)
-	end
 	
 	love.graphics.setFont(consoleFont)
 
@@ -263,12 +250,12 @@ function game_draw()
 		end
 
 		love.graphics.setColor(255, 255, 255)
-		love.graphics.print(os.date("%I:%M %p"), gameFunctions.getWidth() - consoleFont:getWidth(os.date("%I:%M %p")) - 2, gameFunctions.getHeight() - consoleFont:getHeight(os.date("%I:%M %p")) - 1)
+		love.graphics.print(os.date("%I:%M %p"), gameFunctions.getWidth() - consoleFont:getWidth(os.date("%I:%M %p")) - 2, gameFunctions.getHeight() - consoleFont:getHeight(os.date("%I:%M %p")) - 4)
 		
 		if objects["player"][1] then
-			love.graphics.draw(UIIcons["health"]["img"], UIIcons["health"]["quads"][math.min(objects["player"][1].health + 1, 4)], 2, 1)
+			love.graphics.draw(UIIcons["health"]["img"], UIIcons["health"]["quads"][math.min(objects["player"][1].health + 1, 4)], 2, 0)
 		else
-			love.graphics.draw(UIIcons["health"]["img"], UIIcons["health"]["quads"][1], 2, 1)
+			love.graphics.draw(UIIcons["health"]["img"], UIIcons["health"]["quads"][1], 2, 0)
 		end
 
 		love.graphics.draw(UIIcons["power"], gameFunctions.getWidth() - 18, 1)
@@ -308,6 +295,17 @@ function game_draw()
 			end
 		end
 	--end
+
+	love.graphics.setScreen("top")
+	if paused then
+		love.graphics.setColor(0, 0, 0, 255 * 0.5)
+		love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+
+		love.graphics.setColor(255, 255, 255, 255)
+
+		love.graphics.setFont(introFont)
+		love.graphics.print("GAME PAUSED", love.graphics.getWidth() / 2 - introFont:getWidth("GAME PAUSED") / 2, love.graphics.getHeight() / 2 - introFont:getHeight() - 2)
+	end
 end
 
 function game_keypressed(key)
@@ -317,16 +315,13 @@ function game_keypressed(key)
 
 			if paused then
 				pausesnd:play()
-				if key == controls["back"] then
-					gameFunctions.changeState("title")
-				end
 			end
 		end
 	end
 
 	if consoles[1] then
 		if key == "x" then
-			consoles[1] = nil
+			table.remove(consoles, 1)
 			eventSystem.sleep = 0
 		end
 	end
@@ -357,12 +352,6 @@ function game_mousepressed(x, y, button)
 end
 
 function game_keyreleased(key)
-	if consoles[1] then
-		if key == "x" then
-			consoles[1]:keyup()
-		end
-	end
-
 	if not objects["player"][1] then
 		return
 	end
@@ -431,11 +420,11 @@ function game_Explode(self, other, color)
 	elseif t == "document" then
 		min, max = 140, 160
 	else
-		min, max = 10240, 10240 --ye 10MB
+		min, max = 18000, 18000 --ye 18MB
 	end
 
 	local objData = math.random(min, max)
-	local str = fixTerminalData("VIRUS [H@x0r] has infected file: [" .. class .. ", " .. obj.extensions.t .. " file] . File size: " .. objData .. " KB.", gameFunctions.getWidth() - 4)
+	local str = fixTerminalData("VIRUS [H@x0r] has infected file: [" .. class .. ", " .. obj.extensions.t .. " file] . File size: " .. objData .. " KB.", 304)
 
 	scoreAdd = scoreAdd + objData
 
@@ -453,7 +442,7 @@ function game_Explode(self, other, color)
 
 	collectSnd[math.random(#collectSnd)]:play()
 
-	if objects["player"][1].health < 5 then
+	if objects["player"][1].health < 3 then
 		if math.random(100) < 30 then
 			table.insert(objects["health"], healthitem:new(obj.x + obj.width / 2, obj.y))
 		end
@@ -651,5 +640,5 @@ function getEnemyCount()
 	local o = objects
 	local audio, exe, doc, sys, img, web, boss = o["audioblaster"], o["executioner"], o["document"], o["sudo"], o["paintbird"], o["webexplorer"], o["boss"]
 
-	return (#audio + #exe + #doc + #sys + #img + #web + #boss + #consoles)
+	return (#audio + #exe + #doc + #sys + #img + #web + #boss)
 end

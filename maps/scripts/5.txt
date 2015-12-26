@@ -6,3 +6,4 @@ wait=7
 console=Most of the data in them stands around doing nothing.
 wait=6
 console=..I'll just leave you be again. Carry on.
+wait=1

@@ -12,3 +12,4 @@ wait=6
 console=Not only that, but it--well--it's pretty badly made.
 wait=6
 console=Just keep going and infect more data!
+wait=1

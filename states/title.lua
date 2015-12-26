@@ -1,6 +1,8 @@
 function title_init()
 	_PLAYERLIVES = 3
 	
+	
+	
 	titleStrings = 
 	{
 		function() gameFunctions.changeState("game") end,
@@ -10,7 +12,7 @@ function title_init()
 	}
 	
 	love.graphics.setBackgroundColor(0, 128, 128)
-
+	
 	titleselectioni = 1
 	tapCount = 0
 	

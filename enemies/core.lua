@@ -45,11 +45,14 @@ function core:init(x, y)
 	self.animation = {1, 2, 3, 4, 5, 4, 3, 2}
 
 	titlemusic:stop()
-	if not bossmusic then
-		self.song = love.audio.newSource("audio/boss.wav")
-	else
-		self.song = bossmusic
+
+	local song = endBossSong
+
+	if not endBossSong then
+		endBossSong = love.audio.newSource("audio/boss.wav")
 	end
+
+	self.song = endBossSong
 
 	self.attacks = {"dive", "shootcircle", "shoot", "pound", "none"}
 
@@ -57,7 +60,7 @@ function core:init(x, y)
 	self.doUpdate = true
 
 	self.shootTime = 0
-	self.shootDelay = 0.3
+	self.shootDelay = 0.2
 	self.shootMax = 2
 	self.shootDuration = 0
 	self.attack = "none"
@@ -67,6 +70,9 @@ function core:init(x, y)
 	self.invincible = false
 	self.draws = true
 	self.invincibleTimer = 0
+
+	self.healthTimer = 0
+	self.healthRate = 6
 end
 
 function core:update(dt)
@@ -90,6 +96,22 @@ function core:update(dt)
 	else
 		self.timer = self.timer + 8 * dt
 		self.quadi = self.animation[math.floor(self.timer % #self.animation) + 1]
+	end
+
+	if objects["player"][1] then
+		local v = objects["player"][1]
+		if v.health > 0 and v.health < 3 then
+			if #objects["health"] < 1 then
+				if self.healthTimer < self.healthRate then
+					self.healthTimer = self.healthTimer + dt
+				else
+					if math.random(100) <= 10 then
+						table.insert(objects["health"], healthitem:new(math.random(2 * 16, 24 * 16), 11 * 16))
+					end
+					self.healthTimer = 0
+				end
+			end
+		end
 	end
 
 	if self.invincible then
@@ -259,6 +281,10 @@ end
 function core:die()
 	bossdiesnd:play()
 
+	self.song:stop()
+
+	endBossSong = nil
+
 	game_Explode(self, nil, {0, 0, 0})
 
 	self.remove = true
@@ -279,8 +305,8 @@ function core:leftCollide(name, data)
 	else
 		if not self.invincible then
 			data:takeDamage(-1)
-			return false
 		end
+		return false
 	end
 end
 
@@ -291,8 +317,8 @@ function core:rightCollide(name, data)
 	else
 		if not self.invincible then
 			data:takeDamage(-1)
-			return false
 		end
+		return false
 	end
 end
 
@@ -313,8 +339,8 @@ function core:downCollide(name, data)
 			if not self.invincible then
 				data:takeDamage(-1)
 			end
+			return false
 		end
-		return false
 	end
 end
 
@@ -326,7 +352,7 @@ function laser:init(x, y, speedx, speedy)
 	self.x = x
 	self.y = y
 	
-	self.width = 4
+	self.width = 8
 	self.height = 1
 	
 	self.active = false
@@ -347,16 +373,7 @@ function laser:update(dt)
 	self.timer = self.timer + 8 * dt
 	self.colori = math.floor(self.timer % #self.laserColors) + 1
 	
-	if not self.start then
-		if self.startTime < 0.2 then
-			self.startTime = self.startTime + dt
-		else
-			self.start = true
-		end
-	else
-		self.x = self.x + self.speedx * dt
-		self.width = 8
-	end
+	self.x = self.x + self.speedx * dt
 
 	if self.lifeTime > 0 then
 		self.lifeTime = self.lifeTime - dt

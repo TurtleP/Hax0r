@@ -29,7 +29,7 @@ function bullet:init(x, y, ang)
 end
 
 function bullet:update(dt)
-	if self.y > gameFunctions.getHeight() then
+	if self.y > gameFunctions.getHeight() or self.x + self.width < 0 or self.x > gameFunctions.getWidth() or self.y < 0 then
 		self.remove = true
 	end
 end

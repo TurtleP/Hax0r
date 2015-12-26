@@ -12,3 +12,4 @@ unfreezeplayer=
 console=It was a missing component I forgot to upload with you.
 wait=5
 console=Just don't stand there doing nothing, you useless pointer.
+wait=1

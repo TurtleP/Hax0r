@@ -6,3 +6,4 @@ wait=6
 console=Don't give me that look. I built you from scratch!
 wait=5
 console=You'll keep going and do as I have requested!
+wait=1

@@ -44,12 +44,11 @@ require 'enemies/core'
 	You're welcome Jeviny.
 --]]
 
+
 function love.load()
-
-	startTime = love.timer.getTime()
-	loadingData = {}
-
 	controls = {}
+
+	print("sup")
 
 	controls["right"] = "cpadright"
 	controls["left"] = "cpadleft"
@@ -65,22 +64,20 @@ function love.load()
 	if love.system.getOS() ~= "3ds" then
 		--image filter
 		love.graphics.setDefaultFilter("nearest", "nearest")
-		love.window.setTitle("Hax0r?")
-		love.window.setIcon(love.image.newImageData("graphics/icon.png"))
 
 		homebrewMode = false
 		math.random = love.math.random
 
 		require 'libraries/3ds'
 
-		controls["right"] = "right"
-		controls["left"] = "left"
-		controls["up"] = "up"
-		controls["down"] = "down"
+		controls["right"] = "d"
+		controls["left"] = "a"
+		controls["up"] = "w"
+		controls["down"] = "s"
 
-		controls["jump"] = "z"
+		controls["jump"] = "space"
 		controls["pause"] = "return"
-		controls["dodge"] = {"lctrl", " "}
+		controls["dodge"] = {"q", "e"}
 
 		require 'libraries/joystick'
 
@@ -163,7 +160,7 @@ function love.load()
 	firewallimg = love.graphics.newImage("graphics/firewall.png")
 	firewallquads = {}
 	for k = 1, 2 do
-		firewallquads[k] = love.graphics.newQuad((k - 1) * 17, 0, 16, 16, firewallimg:getWidth(), firewallimg:getHeight()) 
+		firewallquads[k] = love.graphics.newQuad((k - 1) * 17, 0, 16, 16, firewallimg:getWidth(), firewallimg:getHeight())
 	end
 
 	waterimg = love.graphics.newImage("graphics/digitalsea.png")
@@ -185,7 +182,7 @@ function love.load()
 	for k = 1, 5 do
 		executionerquads[k] = love.graphics.newQuad((k - 1) * 22, 0, 21, 29, executionerimg[1]:getWidth(), executionerimg[1]:getHeight())
 	end
-	
+
 	musicimg = love.graphics.newImage("enemies/musicFile.png")
 	musicquads = {}
 	for k = 1, 3 do
@@ -198,7 +195,7 @@ function love.load()
 		notequads[k] = love.graphics.newQuad((k - 1) * 7, 0, 6, 8, noteimg:getWidth(), noteimg:getHeight())
 	end
 
-	paintbirdimg = 
+	paintbirdimg =
 	{
 		["left"] = {love.graphics.newImage("enemies/imageFile.png"), love.graphics.newImage("enemies/imageFile2.png")},
 		["right"] = {love.graphics.newImage("enemies/imageFileFlip.png"), love.graphics.newImage("enemies/imageFileFlip2.png")}
@@ -243,7 +240,7 @@ function love.load()
 	computerimg = love.graphics.newImage("graphics/computericon.png")
 
 	appsicon = love.graphics.newImage("graphics/ds.png")
-	
+
 	bannerimg = love.graphics.newImage("graphics/lovepotionbanner.png")
 
 	gameoverimg = love.graphics.newImage("graphics/gameover.png")
@@ -272,7 +269,6 @@ function love.load()
 	hitpointimg = love.graphics.newImage("graphics/hitpoint.png")
 
 	--maps
-
 	local myDirectory = "sdmc:/3ds/Hax0r/game/maps/scripts"
 	local open = io.open
 	if not homebrewMode then
@@ -283,7 +279,7 @@ function love.load()
 	mapScripts = {}
 	for k = 1, 9 do
 		local f = open(myDirectory .. "/" .. k .. ".txt")
-		
+
 		if type(f) ~= "string" and f then
 			mapScripts[k] = f:read("*a")
 
@@ -296,9 +292,7 @@ function love.load()
 	end
 
 	--audio
-
 	titlemusic = love.audio.newSource("audio/title.wav", "stream")
-	midbossmusic = love.audio.newSource("audio/midboss.wav")
 
 	consolesound = love.audio.newSource("audio/console.wav")
 	jumpsound = love.audio.newSource("audio/jump.wav")
@@ -333,176 +327,6 @@ function love.load()
 	gameFunctions.changeState("intro")
 end
 
-function savelog(data)
-	local pcdata = os.date("!*t")
-	
-	local errFile = io.open("sdmc:/3ds/Hax0r/error.txt")
-	
-	if errFile then
-		errFile:write(data)
-	end
-end
-
-local function error_printer(msg, layer)
-    print((debug.traceback("Error: " .. tostring(msg), 1+(layer or 1)):gsub("\n[^\n]+$", "")))
-end
-
-function love.errhand(msg)
-	local errortime = os.date()
-    msg = tostring(msg)
-
-    error_printer(msg, 2)
-
-	if not homebrewMode then
-		if not love.window or not love.graphics or not love.event then
-			return
-		end
-
-		if not love.graphics.isCreated() or not love.window.isCreated() then
-			if not pcall(love.window.setMode, 800, 600) then
-				return
-			end
-		end
-	end
-	
-    if love.audio then 
-		love.audio.stop() 
-	end
-
-    love.graphics.setColor(255, 255, 255, 255)
-
-    local trace = debug.traceback()
-
-    --love.graphics.clear()
-    love.graphics.origin()
-	
-	if not consoleFont then
-		consoleFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 16)
-	end
-	
-	love.graphics.setBackgroundColor(0, 0, 0)
-	
-	 local err = {}
-
-    table.insert(err, "Error: " .. msg)
-	
-	local n = 0
-    for l in string.gmatch(trace, "(.-)\n") do
-		n = n+1
-		if not string.match(l, "boot.lua") and n ~= 2 and n ~= 3 then
-            l = string.gsub(l, "stack traceback:", "[Stack Traceback]\n")
-            table.insert(err, l)
-        end
-    end
-
-    local p = table.concat(err, "\n")
-
-    p = string.gsub(p, "\t", "")
-    --p = string.gsub(p, "%[string \"(.-)\"%]", "%1")
-	--p = string.gsub(p, "\r\n", "\n")
-	--p = string.gsub(p, "\n", "\r\n")
-	
-	function string:split(delimiter) --Not by me
-		local result = {}
-		local from  = 1
-		local delim_from, delim_to = string.find( self, delimiter, from  )
-		while delim_from do
-			table.insert( result, string.sub( self, from , delim_from-1 ) )
-			from = delim_to + 1
-			delim_from, delim_to = string.find( self, delimiter, from  )
-		end
-		table.insert( result, string.sub( self, from  ) )
-		return result
-	end
-	
-	function fixText(tofixtext, maxLength)
-		local text = {""}
-		local i1 = 1
-		local font = consoleFont
-		
-		for i = 1, string.len(tofixtext) do
-			local v = string.sub(tofixtext, i, i)
-			
-			if font:getWidth( string.sub(tofixtext, i1, i) ) >= maxLength then
-				i1 = i
-				table.insert(text, v)
-			else
-				text[#text] = text[#text] .. v
-			end
-		end
-
-		return text
-	end
-
-	local major, minor, revision, codename = love.getVersion( )
-
-	local errorlog = {	
-					"[Love Version] " .. major .. "." .. minor .. "." .. revision .. "(" .. codename .. ")",
-					"[Error time] " .. errortime, p,
-					"[System OS] " .. love.system.getOS(),
-					}
-
-	savelog(table.concat(errorlog, "\r\n\r\n"))
-	
-	p = string.gsub(p, "\r\n", "\n")
-	
-	local errT = fixText(p, 400)
-	
-	local realError = {}
-	for k, v in ipairs(errT) do
-		realError[k] = v
-	end
-	
-	local function draw()
-        love.graphics.clear()
-
-		love.graphics.setScreen("top")
-
-		love.graphics.setFont(consoleFont)
-		
-		local spacer = 5
-		local yy = 0
-		for k = 1, #realError do
-			local t = realError[k]:split("\n")
-			for i, v in ipairs(t) do
-				love.graphics.print(v, 0, 10 + yy)
-				yy = yy + consoleFont:getHeight() + spacer
-			end
-		end
-		
-		love.graphics.setScreen("bottom")
-
-		love.graphics.print("Love Potion version: " .. major .. "." .. minor .. "." .. revision .. " (" .. codename .. ")", 0, 10)
-
-		love.graphics.print("Error time: " .. errortime, 0, 30)
-
-		love.graphics.present()
-	end
-	
-	while true do
-		if not homebrewMode then
-			love.event.pump()
-
-			for e, a, b, c in love.event.poll() do
-				if e == "quit" then
-					return
-				end
-				if e == "keypressed" and a == "escape" then
-					return
-				end
-			end
-		end
-		
-		draw()
-
-		if not homebrewMode then
-			if love.timer then
-				love.timer.sleep(0.1)
-			end
-		end
-	end
-end
-
 function love.update(dt)
 	dt = math.min(1/60, dt)
 	if _G[state .. "_update"] then
@@ -529,12 +353,20 @@ function love.keyreleased(key)
 end
 
 function love.mousepressed(x, y, button)
+	if button == 1 then
+		button = "l"
+	end
+
 	if _G[state .. "_mousepressed"] then
 		_G[state .. "_mousepressed"](x, y, button)
 	end
 end
 
 function love.mousereleased(x, y, button)
+	if button == 1 then
+		button = "l"
+	end
+
 	if _G[state .. "_mousereleased"] then
 		_G[state .. "_mousereleased"](x, y, button)
 	end
@@ -553,7 +385,7 @@ end
 
 function gameFunctions.getWidth(tile)
 	local g = love.graphics.getWidth()
-	
+
 	if tile then
 		return g / 16
 	end
@@ -562,7 +394,7 @@ end
 
 function gameFunctions.getHeight(tile)
 	local g = love.graphics.getHeight()
-	
+
 	if tile then
 		return g / 16
 	end

@@ -15,8 +15,6 @@ function tile:init(x, y, w, h, id)
 
 	self.id = id
 
-	self.passive = false
-
 	if id == "water" then
 		self.graphic = waterimg
 		self.passive = true

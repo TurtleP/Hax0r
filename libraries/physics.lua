@@ -19,47 +19,28 @@ function physicsupdate(dt)
 					objData.speedy = math.min(objData.speedy + objData.gravity * dt, 15 * 16) --add gravity to objects
 
 					for name2, object2T in pairs(obj) do
-						if objData.mask and objData.mask[name2] == true and not objData.passive then
-							hor, ver = checkCollision(objectT, object2T, objData, name, name2, dt)
+						if objData.mask then
+							if objData.mask[name2] and not objData.passive then
+								hor, ver = checkCollision(objectT, object2T, objData, name, name2, dt)
+							else
+								checkPassive(objectT, object2T, objData, name, name2, dt)
+							end
 						else
 							checkPassive(objectT, object2T, objData, name, name2, dt)
 						end
 					end
 					
-					if not hor then
+					if hor == false then
 						objData.x = objData.x + objData.speedx * dt
 					end
 
-					if not ver then
+					if ver == false then
 						objData.y = objData.y + objData.speedy * dt
 					end
 				end
 			end
 		end
 	end
-end
-
-function checkRectangle(x, y, w, h, obj)
-
-	if type(obj) == "string" then
-		for k, v in pairs(objects[obj]) do
-			if aabb(x, y, w, h, v.x, v.y, v.width, v.height) then
-				return true
-			end
-		end
-		return false
-	else
-		for k = 1, #obj do
-			local v = obj[k]
-			for j, v in pairs(objects[v]) do
-				if aabb(x, y, w, h, v.x, v.y, v.width, v.height) then
-					return true
-				end
-			end
-		end
-		return false
-	end
-
 end
 
 function checkPassive(objTable, obj2Table, objData, objName, obj2Name, dt)
@@ -81,19 +62,28 @@ function checkCollision(objTable, obj2Table, objData, objName, obj2Name, dt)
 			if aabb(objData.x + objData.speedx * dt, objData.y + objData.speedy * dt, objData.width, objData.height, obj2Data.x, obj2Data.y, obj2Data.width, obj2Data.height) then
 
 				if aabb(objData.x, objData.y + objData.speedy * dt, objData.width, objData.height, obj2Data.x, obj2Data.y, obj2Data.width, obj2Data.height) then --was vertical
-					ver = verticalCollide(objName, objData, obj2Name, obj2Data)
+					if verticalCollide(objName, objData, obj2Name, obj2Data) then
+						ver = true
+					end
 				elseif aabb(objData.x + objData.speedx * dt, objData.y, objData.width, objData.height, obj2Data.x, obj2Data.y, obj2Data.width, obj2Data.height) then
-					hor = horizontalCollide(objName, objData, obj2Name, obj2Data)
+					if horizontalCollide(objName, objData, obj2Name, obj2Data) then
+						hor = true
+					end
 				else
+					--Diagnal shit
 					local g = 15 * 16 * dt
 					if objData.gravity then
 						g = objData.gravity
 					end
 					
 					if math.abs(objData.speedy - g) < math.abs(objData.speedx) then
-						ver = verticalCollide(objName, objData, obj2Name, obj2Data)
+						if verticalCollide(objName, objData, obj2Name, obj2Data) then
+							ver = true
+						end
 					else
-						hor = horizontalCollide(objName, objData, obj2Name, obj2Data)
+						if horizontalCollide(objName, objData, obj2Name, obj2Data) then
+							hor = true
+						end
 					end
 				end
 
@@ -136,7 +126,7 @@ function horizontalCollide(objName, objData, obj2Name, obj2Data)
 				obj2Data.speedx = 0
 			end
 		end
-	elseif objData.speedx < 0 then
+	else
 		if objData.leftCollide then
 			if objData:leftCollide(obj2Name, obj2Data) ~= false then
 				if objData.speedx < 0 then
@@ -200,7 +190,7 @@ function verticalCollide(objName, objData, obj2Name, obj2Data)
 				obj2Data.speedy = 0
 			end
 		end
-	elseif objData.speedy < 0 then
+	else
 		if objData.upCollide then
 			if objData:upCollide(obj2Name, obj2Data) ~= false then
 				if objData.speedy < 0 then

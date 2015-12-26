@@ -4,7 +4,7 @@ function eventsystem:init()
 	self.sleep = 0
 	self.i = 0
 	self.events = {}
-	currentScript = 8
+	currentScript = 1
 	self.running = true
 end
 
@@ -41,12 +41,14 @@ function eventsystem:update(dt)
 				end
 			elseif v.cmd == "spawnBoss" then
 				objects["boss"][1] = core:new(12 * 16, 6 * 16)
+			elseif v.cmd == "spawnMidBoss" then
+				objects["boss"][1] = cmd:new(13 * 16, 6 * 16)
 			elseif v.cmd == "shake" then
 				shakeIntensity = tonumber(v.args)
 			elseif v.cmd == "changeState" then
 				gameFunctions.changeState(v.args)
 			elseif v.cmd == "killPlayer" then
-				objects["player"][1]:ide(true)
+				objects["player"][1]:die(true)
 			end
 		end
 	else
@@ -92,7 +94,7 @@ function eventsystem:decrypt(scriptString)
 	for k = 1, #cmd do
 		local arg = cmd[k][2]
 		if cmd[k][1] == "wait" then
-			cmd[k][2] = tonumber(arg)
+			cmd[k][2] = tonumber(arg) or 0
 		end
 		self:queue(cmd[k][1], cmd[k][2])
 	end

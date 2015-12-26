@@ -111,15 +111,14 @@ function player:init(x, y, fadein, health)
 end
 
 function player:respawn()
+	self.quadi = 1
+	self.dead = false
+
 	self.x = self.oldX
 	self.y = self.oldY
 
-	self.health = 5
+	self.health = 3
 	playerhealth = self.health
-	self.dead = false
-
-	self.graphic = playerimg
-	self.quads = playerquads
 
 	self.invincible = true
 end
@@ -159,7 +158,7 @@ function player:update(dt)
 		if self.dashTimer < 0.2 then
 			self.dashTimer = self.dashTimer + dt
 		else
-			table.insert(self.dashes, dash:new(self.x, self.y, self.quadi))
+			table.insert(self.dashes, dash:new(self.x, self.y, math.min(self.quadi, 3)))
 			self.dashTimer = 0
 		end
 
@@ -246,16 +245,16 @@ function player:draw()
 	if self.dead then
 		love.graphics.draw(deathimg, deathquads[self.quadi], self.x , self.y )
 		return
-	end
+	else
+		if self.draws then
+			love.graphics.setColor(255, 255, 255, 255 * self.fade)
+			love.graphics.draw(self.graphic, self.quads[self.animations[self.quadi]], self.x , self.y )
+			love.graphics.setColor(255, 255, 255, 255)
+		end
 
-	if self.draws then
-		love.graphics.setColor(255, 255, 255, 255 * self.fade)
-		love.graphics.draw(self.graphic, self.quads[self.animations[self.quadi]], self.x , self.y )
-		love.graphics.setColor(255, 255, 255, 255)
-	end
-
-	for k, v in pairs(self.dashes) do
-		v:draw()
+		for k, v in pairs(self.dashes) do
+			v:draw()
+		end
 	end
 
 	love.graphics.setColor(255, 255, 255, 255)
@@ -332,6 +331,10 @@ function player:dodge()
 end
 
 function player:jump(shortHop)
+	if self.dodging then
+		return
+	end
+
 	if self.jumping == false and not shortHop then
 		self.speedy = -160
 
@@ -342,12 +345,10 @@ function player:jump(shortHop)
 		self.speedy = -120
 		self.speedx = 120
 		self.jumping = true
-		print("Left wall jump")
 	elseif self.jumping == "right" then
 		self.speedy = -120
 		self.speedx = -120
 		self.jumping = true
-		print("Right wall jump")
 	else
 		if shortHop then
 			self.speedy = -120
@@ -368,6 +369,18 @@ function player:downCollide(name, data)
 		game_Explode(data, nil, {0, 174, 255})
 		self:jump(true)
 		data.remove = true
+		return false
+	end
+
+	if name == "notes" then
+		return false
+	end
+
+	if name == "paintdrop" then
+		return false
+	end
+
+	if name == "rocket" then
 		return false
 	end
 
@@ -405,20 +418,20 @@ function player:downCollide(name, data)
 
 	if name == "boss" then
 		if data.fade > 0.5 then
-			local dir = {"left", "right"}
-			local choice = ""
+			if not self.invincible then
+				self:jump(true)
 
-			if data.speedx ~= 0 then
-				self.speedx = -data.speedx * 2
-			else
-				choice = dir[math.random(2)]
+				if not data.invincible then
+					data:takeDamage()
+				end
+
+				return false
 			end
-
-			self.jumping = choice
-			self:jump(true)
-			data:takeDamage()
 		end
-		return false
+
+		if self.invincible or data.invincible then
+			return false
+		end
 	end
 	
 	if name == "bullet" then
@@ -441,6 +454,7 @@ function player:upCollide(name, data)
 	if name == "bullet" then
 		self:takeDamage(-1)
 		data.remove = true
+		return false
 	end
 	
 	if name == "laser" then
@@ -479,6 +493,7 @@ function player:rightCollide(name, data)
 	if name == "bullet" then
 		self:takeDamage(-1)
 		data.remove = true
+		return false
 	end
 	
 	if name == "laser" then
@@ -510,21 +525,19 @@ end
 function player:takeDamage(value)
 	if not self.dead and not _LOCKPLAYER then
 		if not self.invincible then
-			if self.dodging then
-				return
-			end
-		
-			if value < 0 then
-				hurtsnd[math.random(#hurtsnd)]:play()
-				self.health = self.health + value
-				self.invincible = true
+			if not self.dodging then
+				if value < 0 then
+					hurtsnd[math.random(#hurtsnd)]:play()
+					self.health = math.max(self.health + value, 0)
+					self.invincible = true
+				end
 			end
 		end
 
 		if value > 0 then
 			lifesnd:play()
 
-			self.health = self.health + value
+			self.health = math.min(self.health + value, 3)
 		end
 
 		playerhealth = self.health
@@ -535,19 +548,15 @@ function player:takeDamage(value)
 	end
 end
 
-function player:setPosition(x, y)
-	self.x = x
-	self.y = y
-end
-
 function player:die(win)
 	if not self.dead then
-		self.dead = true
 		self.win = win
 
 		self.quadi = 1
 		self.timer = 0
 		deathsnd:play()
+
+		self.dead = true
 	end
 end
 
