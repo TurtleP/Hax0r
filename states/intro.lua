@@ -20,12 +20,9 @@ function intro_update(dt)
 end
 
 function intro_draw()
-	love.graphics.setScreen("top")
 	love.graphics.setColor(255, 255, 255, 255 * introfade)
-	love.graphics.draw(introimg, love.graphics.getWidth() / 2 - introimg:getWidth() / 2, love.graphics.getHeight() / 2 - introimg:getHeight() / 2)
-	love.graphics.print(introtext, love.graphics.getWidth() / 2 - introFont:getWidth(introtext) / 2, love.graphics.getHeight() * 0.75)
-	love.graphics.setScreen("bottom")
-	love.graphics.draw(bannerimg, love.graphics.getWidth() / 2 - bannerimg:getWidth() / 2, love.graphics.getHeight() / 2 - bannerimg:getHeight() / 2)
+	love.graphics.draw(introimg, gameFunctions.getWidth() / 2 - introimg:getWidth() / 2, gameFunctions.getHeight() / 2 - introimg:getHeight() / 2)
+	love.graphics.print(introtext, gameFunctions.getWidth() / 2 - introFont:getWidth(introtext) / 2, gameFunctions.getHeight() * 0.75)
 end
 
 function intro_mousepressed(x, y, button)

@@ -11,6 +11,21 @@ function colorfade(currenttime, maxtime, c1, c2) --Color function, HugoBDesigner
 	return ret
 end
 
+function changeScale(s)
+	if s then
+		scale = s
+		love.window.setMode(400 * scale, 240 * scale, {vsync = true})
+	else
+		love.window.setFullscreen(true, "normal")
+
+		local width, height = love.window.getDesktopDimensions()
+
+		love.window.setMode(width, height, {vsync = true})
+
+		scale = math.floor(math.max(width / 400, height / 240))
+	end
+end
+
 function string:split(delimiter) --Not by me
 	local result = {}
 	local from  = 1

@@ -43,98 +43,31 @@ require 'enemies/core'
 
 	You're welcome Jeviny.
 --]]
-
+function love.graphics.setScreen() end
 
 function love.load()
 	controls = {}
 
-	print("sup")
-
-	controls["right"] = "cpadright"
-	controls["left"] = "cpadleft"
-	controls["up"] = "cpadup"
-	controls["down"] = "cpaddown"
-
-	controls["jump"] = "a"
-	controls["pause"] = "start"
-	controls["dodge"] = {"lbutton", "rbutton"}
-
 	homebrewMode = true
 
-	if love.system.getOS() ~= "3ds" then
-		--image filter
-		love.graphics.setDefaultFilter("nearest", "nearest")
+	love.graphics.setDefaultFilter("nearest", "nearest")
 
-		homebrewMode = false
-		math.random = love.math.random
+	math.random = love.math.random
 
-		require 'libraries/3ds'
+	--require 'libraries/3ds'
 
-		controls["right"] = "d"
-		controls["left"] = "a"
-		controls["up"] = "w"
-		controls["down"] = "s"
+	controls["right"] = "d"
+	controls["left"] = "a"
+	controls["up"] = "w"
+	controls["down"] = "s"
 
-		controls["jump"] = "space"
-		controls["pause"] = "return"
-		controls["dodge"] = {"q", "e"}
-
-		require 'libraries/joystick'
-
-		local oldAdd = love.joystickadded
-		love.joystickadded = function(joyStick)
-			oldAdd(joyStick)
-
-			getJoystick(1).doAxis = function(self, axis, value)
-				if axis == "leftx" then
-					if value > 0.5 then
-						love.keypressed(controls["right"])
-						love.keyreleased(controls["left"])
-					elseif value < -0.5 then
-						love.keypressed(controls["left"])
-						love.keyreleased(controls["right"])
-					elseif value >= -0.5 or value <= 0.5 then
-						love.keyreleased(controls["right"])
-						love.keyreleased(controls["left"])
-					end
-				elseif axis == "lefty" then
-					if value > 0.5 then
-						love.keypressed(controls["down"])
-						love.keyreleased(controls["up"])
-					elseif value < -0.5 then
-						love.keypressed(controls["up"])
-						love.keyreleased(controls["down"])
-					elseif value >= -0.5 or value <= 0.5 then
-						love.keyreleased(controls["up"])
-						love.keyreleased(controls["down"])
-					end
-				end
-			end
-
-			getJoystick(1).doPressed = function(self, button)
-				if button == "a" then
-					love.keypressed(controls["jump"])
-				end
-
-				if button == "leftshoulder" or button == "rightshoulder" then
-					love.keypressed(controls["dodge"][1])
-				end
-
-				if button == "start" then
-					love.keypressed(controls["pause"])
-				end
-
-				if button == "x" then
-					love.keypressed("x")
-				end
-			end
-		end
-	else
-		math.randomseed(os.time())
-	end
+	controls["jump"] = "space"
+	controls["pause"] = "return"
+	controls["dodge"] = {"q", "e"}
 
 	consoleFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 16)
 	introFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 32)
+	gameOverFont = love.graphics.newFont("graphics/windows_command_prompt.ttf", 16)
 
 	titleimg = love.graphics.newImage("graphics/title.png")
 
@@ -148,7 +81,7 @@ function love.load()
 	}
 
 	for k = 1, 4 do
-		UIIcons["health"]["quads"][k] = love.graphics.newQuad((k - 1) * 18, 0, 18, 18, UIIcons["health"]["img"]:getWidth(), 18)
+		UIIcons["health"]["quads"][k] = love.graphics.newQuad((k - 1) * 18, 0, 16, 16, UIIcons["health"]["img"]:getWidth(), 16)
 	end
 
 	playerimg = love.graphics.newImage("graphics/player-new.png")
@@ -269,60 +202,63 @@ function love.load()
 	hitpointimg = love.graphics.newImage("graphics/hitpoint.png")
 
 	--maps
-	local myDirectory = "sdmc:/3ds/Hax0r/game/maps/scripts"
-	local open = io.open
-	if not homebrewMode then
-		myDirectory = "maps/scripts"
-		open = love.filesystem.read
-	end
-
 	mapScripts = {}
 	for k = 1, 9 do
-		local f = open(myDirectory .. "/" .. k .. ".txt")
-
-		if type(f) ~= "string" and f then
-			mapScripts[k] = f:read("*a")
-
-			if io.read() == nil then
-				f:close()
-			end
-		else
-			mapScripts[k] = f
-		end
+		local f = love.filesystem.read("maps/scripts/" .. k .. ".txt")
+		mapScripts[k] = f
 	end
 
 	--audio
-	titlemusic = love.audio.newSource("audio/title.wav", "stream")
+	titlemusic = love.audio.newSource("audio/title.ogg", "stream")
 
-	consolesound = love.audio.newSource("audio/console.wav")
-	jumpsound = love.audio.newSource("audio/jump.wav")
+	consolesound = love.audio.newSource("audio/console.ogg")
+	jumpsound = love.audio.newSource("audio/jump.ogg")
 
-	playerspawn = love.audio.newSource("audio/playerspawn.wav")
+	playerspawn = love.audio.newSource("audio/playerspawn.ogg")
 
-	gameoversnd = love.audio.newSource("audio/gameover.wav")
+	gameoversnd = love.audio.newSource("audio/gameover.ogg")
 
-	deathsnd = love.audio.newSource("audio/death.wav")
-	shootsnd = love.audio.newSource("audio/shoot.wav")
+	deathsnd = love.audio.newSource("audio/death.ogg")
+	shootsnd = love.audio.newSource("audio/shoot.ogg")
 
-	bossspawnsnd = love.audio.newSource("audio/bossspawn.wav")
+	bossspawnsnd = love.audio.newSource("audio/bossspawn.ogg")
 
-	lifesnd = love.audio.newSource("audio/addlife.wav")
-	pausesnd = love.audio.newSource("audio/pause.wav")
-	lasersnd = love.audio.newSource("audio/laser.wav")
-	bossdiesnd = love.audio.newSource("audio/bossdie.wav")
+	lifesnd = love.audio.newSource("audio/addlife.ogg")
+	pausesnd = love.audio.newSource("audio/pause.ogg")
+	lasersnd = love.audio.newSource("audio/laser.ogg")
+	bossdiesnd = love.audio.newSource("audio/bossdie.ogg")
 
-	rebootsnd = love.audio.newSource("audio/reboot.wav")
-	errorsnd = love.audio.newSource("audio/error.wav")
+	rebootsnd = love.audio.newSource("audio/reboot.ogg")
+	errorsnd = love.audio.newSource("audio/error.ogg")
 
 	collectSnd = {}
 	for k = 1, 3 do
-		collectSnd[k] = love.audio.newSource("audio/infect" .. k .. ".wav")
+		collectSnd[k] = love.audio.newSource("audio/infect" .. k .. ".ogg")
 	end
 
 	hurtsnd = {}
 	for k = 1, 3 do
-		hurtsnd[k] = love.audio.newSource("audio/hurt" .. k .. ".wav")
+		hurtsnd[k] = love.audio.newSource("audio/hurt" .. k .. ".ogg")
 	end
+
+	local mobileDevices =
+	{
+		["Android"] = true,
+		["Windows App"] = true,
+		["iOS"] = true
+	}
+	
+	scale = 2
+	--if not mobileDevices[love.system.getOS()] then
+		changeScale(scale)
+	--else
+	--	changeScale()
+		mobileMode = true
+
+		require 'android/touchcontrol'
+		
+		touchControls = touchcontrol:new()
+	--end
 
 	gameFunctions.changeState("intro")
 end
@@ -335,6 +271,8 @@ function love.update(dt)
 end
 
 function love.draw()
+	love.graphics.scale(scale, scale)
+
 	if _G[state .. "_draw"] then
 		_G[state .. "_draw"]()
 	end
@@ -356,7 +294,7 @@ function love.mousepressed(x, y, button)
 	if button == 1 then
 		button = "l"
 	end
-
+	
 	if _G[state .. "_mousepressed"] then
 		_G[state .. "_mousepressed"](x, y, button)
 	end
@@ -384,7 +322,7 @@ function gameFunctions.changeState(newState, ...)
 end
 
 function gameFunctions.getWidth(tile)
-	local g = love.graphics.getWidth()
+	local g = 400
 
 	if tile then
 		return g / 16
@@ -393,7 +331,7 @@ function gameFunctions.getWidth(tile)
 end
 
 function gameFunctions.getHeight(tile)
-	local g = love.graphics.getHeight()
+	local g = 240
 
 	if tile then
 		return g / 16
@@ -403,6 +341,6 @@ end
 
 function love.focus(f)
 	if not f and not gameover then
-		--paused = true
+		paused = true
 	end
 end

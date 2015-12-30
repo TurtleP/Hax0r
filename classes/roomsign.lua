@@ -38,7 +38,7 @@ function roomsign:draw()
 	love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
 	love.graphics.setColor(255, 255, 255, 255 * self.fade)
 
-	love.graphics.print(self.text, self.x + self.width / 2 - consoleFont:getWidth(self.text) / 2, self.y + (self.height / 2) - consoleFont:getHeight(self.text) / 2 - 2)
+	love.graphics.print(self.text, self.x + self.width / 2 - consoleFont:getWidth(self.text) / 2, self.y + (self.height / 2) - consoleFont:getHeight(self.text) / 2)
 
 	love.graphics.rectangle("line", self.x, self.y, self.width, self.height)
 

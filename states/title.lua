@@ -52,7 +52,6 @@ end
 function title_draw()
 	love.graphics.setColor(255, 255, 255, 255)
 
-	love.graphics.setScreen("top")
 	love.graphics.draw(background[backgroundi], 0, 0)
 
 	love.graphics.setColor(0, 0, 0)
@@ -60,11 +59,9 @@ function title_draw()
 
 	love.graphics.setColor(255, 255, 255, 255)
 	love.graphics.draw(titleimg, gameFunctions.getWidth() / 2 - titleimg:getWidth() / 2, gameFunctions.getHeight() / 2 - titleimg:getHeight() / 2)
-
-	love.graphics.setScreen("bottom")
 	
 	love.graphics.setColor(168, 168, 168)
-	love.graphics.rectangle("line", 0, gameFunctions.getHeight() - 16, gameFunctions.getWidth(), 16)
+	love.graphics.rectangle("fill", 0, gameFunctions.getHeight() - 16, gameFunctions.getWidth(), 16)
 	
 	love.graphics.setColor(192, 192, 192)
 	love.graphics.rectangle("fill", 64, gameFunctions.getHeight() - 15, gameFunctions.getWidth() - 64, 15)
@@ -85,15 +82,11 @@ function title_mousepressed(x, y, button)
 	for k, v in pairs(icons) do
 		v:click(x, y)
 	end
-
-	titleMouseX, titleMouseY = love.mouse.getX(), love.mouse.getY()
 end
 
-function title_mousereleased()
-	if titleMouseX and titleMouseY then
-		for k, v in pairs(icons) do
-			v:unclick(titleMouseX, titleMouseY)
-		end
+function title_mousereleased(x, y, button)
+	for k, v in pairs(icons) do
+		v:unclick(x, y)
 	end
 end
 
@@ -122,10 +115,10 @@ function createStart()
 		love.graphics.rectangle("fill", self.x, self.y, self.width, self.height)
 		
 		love.graphics.setColor(255, 255, 255)
-		love.graphics.draw(sudoimg, sudoquads[3], self.x + 2, (self.y + self.height) - 15)
+		love.graphics.draw(sudoimg, sudoquads[3], self.x + 2, (self.y + self.height / 2) - sudoimg:getHeight() / 2)
 		
 		love.graphics.setColor(0, 0, 0)
-		love.graphics.print("start", 22, gameFunctions.getHeight() - consoleFont:getHeight("start") - 2)
+		love.graphics.print("start", 22, gameFunctions.getHeight() - consoleFont:getHeight("start"))
 		love.graphics.setColor(255, 255, 255)
 	end
 	
@@ -138,7 +131,7 @@ function createIcon(x, y, text, i, func)
 	icon.x = x
 	icon.y = y
 	icon.width = 32
-	icon.height = 32
+	--icon.height = 32
 	
 	if i == "web" then
 		icon.graphic = love.graphics.newImage("graphics/ieicon.png")
@@ -170,10 +163,12 @@ function createIcon(x, y, text, i, func)
 
 		love.graphics.setColor(0, 0, 0)
 		love.graphics.print(self.text, self.x + self.width / 2 - consoleFont:getWidth(self.text) / 2, self.y + self.height)
+		love.graphics.setColor(255, 255, 255)
+		love.graphics.print(self.text, (self.x + self.width / 2 - consoleFont:getWidth(self.text) / 2) + 1, (self.y + self.height) + 1)
 	end
 	
 	function icon:click(x, y)
-		if x > self.x and x < self.x + self.width and y > self.y and y < self.y + self.height then
+		if x > self.x * scale and x < self.x * scale + (self.width * scale) and y > self.y * scale and y < self.y * scale + (self.height * scale) then
 			self.clickCount = self.clickCount + 1
 		end
 		
@@ -184,7 +179,7 @@ function createIcon(x, y, text, i, func)
 	
 	function icon:unclick(x, y)
 		if self.clickCount > 0 then
-			if x > self.x and x < self.x + self.width and y > self.y and y < self.y + self.height then
+			if x > self.x * scale and x < self.x * scale + (self.width * scale) and y > self.y * scale and y < self.y * scale + (self.height * scale) then
 				self.clickCount = self.clickCount + 1
 			else
 				self.clickCount = 0

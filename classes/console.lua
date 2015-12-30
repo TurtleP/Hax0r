@@ -62,10 +62,10 @@ function console:draw()
 	love.graphics.setColor(unpack(self.stringColor))
 	
 	love.graphics.setColor(255, 255, 255, 255)
-	love.graphics.print("> " .. self.drawstring, (self.x + 2) , self.y - 2)
+	love.graphics.print("> " .. self.drawstring, (self.x + 2) , self.y)
 
 	if self.i == #self.string then
 		love.graphics.setColor(self.stringColor[1], self.stringColor[2], self.stringColor[3], 255 * self.fade)
-		love.graphics.print("_", (self.x + 2)  + consoleFont:getWidth("> " .. self.string), self.y - 2)
+		love.graphics.print("_", (self.x + 2)  + consoleFont:getWidth("> " .. self.string), self.y)
 	end
 end

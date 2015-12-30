@@ -180,7 +180,7 @@ end
 function game_draw()
 	love.graphics.setColor(255, 255, 255, 255)
 
-	love.graphics.setScreen("top")
+	
 
 	if shakeIntensity > 0 then
 		love.graphics.translate( (math.random() * 2 - 1) * shakeIntensity, (math.random() * 2 - 1) * shakeIntensity ) 
@@ -199,14 +199,6 @@ function game_draw()
 	
 	love.graphics.setFont(consoleFont)
 
-	for k, v in pairs(consoles) do
-		v:draw()
-	end
-
-	if roomSign then
-		roomSign:draw()
-	end
-
 	if mapFade > 0 then
 		love.graphics.setColor(0, 0, 0, 255 * mapFade)
 		love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
@@ -216,95 +208,84 @@ function game_draw()
 	--INTERFACE
 
 	--if homebrewMode then
-		love.graphics.setScreen("bottom")
+	local batteryimg = UIIcons["battery"][1]
 
-		local batteryimg = UIIcons["battery"][1]
+	local batteryLeft = _PLAYERLIVES
 
-		local batteryLeft = _PLAYERLIVES
+	local batteryColor = {0, 127, 14}
+	local percentColor = {0, 155, 15}
 
-		local batteryColor = {0, 127, 14}
-		local percentColor = {0, 155, 15}
+	if batteryLeft == 2 then
+		percentColor = {255, 106, 0}
+		batteryColor = {196, 78, 0}
+	elseif batteryLeft < 2 then
+		percentColor = {232, 0, 0}
+		batteryColor = {190, 0, 0}
+	end
 
-		if batteryLeft == 2 then
-			percentColor = {255, 106, 0}
-			batteryColor = {196, 78, 0}
-		elseif batteryLeft < 2 then
-			percentColor = {232, 0, 0}
-			batteryColor = {190, 0, 0}
-		end
+	love.graphics.setColor(unpack(batteryColor))
+	love.graphics.draw(batteryimg, 2, gameFunctions.getHeight() - batteryimg:getHeight() - 1)
 
-		love.graphics.setColor(32, 32, 32)
-		love.graphics.rectangle("fill", 0, 0, gameFunctions.getWidth(), 18)
-		love.graphics.rectangle("fill", 0, gameFunctions.getHeight() - 18, gameFunctions.getWidth(), 18)
+	love.graphics.setColor(unpack(percentColor))
+	for k = 1, batteryLeft do
+		love.graphics.rectangle("fill", 5 + (k - 1) * 5, (gameFunctions.getHeight() - batteryimg:getHeight() - 1) + 2, 4, 10)
+	end
 
-		love.graphics.setColor(16, 16, 16)
-		love.graphics.rectangle("fill", 0, 18, gameFunctions.getWidth(), gameFunctions.getHeight() - 36)
+	love.graphics.setColor(0, 0, 0)
+	love.graphics.print(os.date("%I:%M %p"), gameFunctions.getWidth() - consoleFont:getWidth(os.date("%I:%M %p")) - 2, gameFunctions.getHeight() - consoleFont:getHeight(os.date("%I:%M %p")))
+	love.graphics.setColor(255, 255, 255, 255)
 
+	if objects["player"][1] then
+		love.graphics.draw(UIIcons["health"]["img"], UIIcons["health"]["quads"][math.min(objects["player"][1].health + 1, 4)], 2, 0)
+	else
+		love.graphics.draw(UIIcons["health"]["img"], UIIcons["health"]["quads"][1], 2, 0)
+	end
 
-		love.graphics.setColor(unpack(batteryColor))
-		love.graphics.draw(batteryimg, 2, gameFunctions.getHeight() - batteryimg:getHeight() - 2)
+	love.graphics.draw(UIIcons["power"], gameFunctions.getWidth() - 18, 0)
 
-		love.graphics.setColor(unpack(percentColor))
-		for k = 1, batteryLeft do
-			love.graphics.rectangle("fill", 5 + (k - 1) * 5, (gameFunctions.getHeight() - batteryimg:getHeight() - 2) + 2, 4, 10)
-		end
+	local scoreType = getScoreType(score)
+	local cmd = "user@Hax0rPC:~$ Infected: " .. round(convert(score, scoreType), 2) .. scoreType .. "/48MB"
 
-		love.graphics.setColor(255, 255, 255)
-		love.graphics.print(os.date("%I:%M %p"), gameFunctions.getWidth() - consoleFont:getWidth(os.date("%I:%M %p")) - 2, gameFunctions.getHeight() - consoleFont:getHeight(os.date("%I:%M %p")) - 4)
+	love.graphics.setColor(0, 0, 0, 255 * math.sin(datablinktimer))
+	love.graphics.print("_", gameFunctions.getWidth() / 2 + consoleFont:getWidth(cmd) / 2 + consoleFont:getWidth("_") / 2, 8 - consoleFont:getHeight() / 2)
+	love.graphics.setColor(0, 0, 0, 255)
+	love.graphics.print(cmd, gameFunctions.getWidth() / 2 - consoleFont:getWidth(cmd) / 2, 8 - consoleFont:getHeight() / 2)
+
+	love.graphics.setColor(0, 0, 0)
+
+	if objects["boss"][1] then
+		local name = objects["boss"][1].name .. ":"
+		local x = (gameFunctions.getWidth() / 2 - ( (consoleFont:getWidth(name) / 2) + 52 / 2) )
+		love.graphics.print(name, x, (18 / 2) - consoleFont:getHeight(name) / 2 - 2)
 		
-		if objects["player"][1] then
-			love.graphics.draw(UIIcons["health"]["img"], UIIcons["health"]["quads"][math.min(objects["player"][1].health + 1, 4)], 2, 0)
-		else
-			love.graphics.draw(UIIcons["health"]["img"], UIIcons["health"]["quads"][1], 2, 0)
-		end
-
-		love.graphics.draw(UIIcons["power"], gameFunctions.getWidth() - 18, 1)
-
-		local scoreType = getScoreType(score)
-		local cmd = "user@H@x0rPC:~$ Infected: " .. round(convert(score, scoreType), 2) .. scoreType .. "/48MB"
-		love.graphics.print(cmd, 0, 18)
-
-		love.graphics.setColor(255, 255, 255, 255 * math.sin(datablinktimer))
-		love.graphics.print("_", consoleFont:getWidth(cmd) + consoleFont:getWidth("_") / 2, 18)
-		love.graphics.setColor(255, 255, 255, 255)
-
-		local spacer = 5
-		local yy = 0
-		for k = 1, #terminalstrings do
-			local t = terminalstrings[k]:split("\n")
-			for i, v in ipairs(t) do
-				love.graphics.print(v, 2, 40 + yy)
-				yy = yy + consoleFont:getHeight() + spacer
+		for k = 1, objects["boss"][1].maxhealth do
+			if k > objects["boss"][1].health then
+				love.graphics.setColor(127, 127, 127)
+			else
+				love.graphics.setColor(255, 255, 255)
 			end
+			love.graphics.draw(hitpointimg, math.floor(x + consoleFont:getWidth(name)) + 4 + (k - 1) * 12, 9 - hitpointimg:getHeight() / 2)
 		end
-
-		love.graphics.setColor(255, 255, 255)
-
-		if objects["boss"][1] then
-			local name = objects["boss"][1].name .. ":"
-			local x = (gameFunctions.getWidth() / 2 - ( (consoleFont:getWidth(name) / 2) + 52 / 2) )
-			love.graphics.print(name, x, (18 / 2) - consoleFont:getHeight(name) / 2 - 2)
-
-			for k = 1, objects["boss"][1].maxhealth do
-				if k > objects["boss"][1].health then
-					love.graphics.setColor(127, 127, 127)
-				else
-					love.graphics.setColor(255, 255, 255)
-				end
-				love.graphics.draw(hitpointimg, math.floor(x + consoleFont:getWidth(name)) + 4 + (k - 1) * 12, 9 - hitpointimg:getHeight() / 2)
-			end
-		end
-	--end
-
-	love.graphics.setScreen("top")
+	end
+	
 	if paused then
 		love.graphics.setColor(0, 0, 0, 255 * 0.5)
-		love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+		love.graphics.rectangle("fill", 0, 0, gameFunctions.getWidth(), gameFunctions.getHeight())
 
 		love.graphics.setColor(255, 255, 255, 255)
 
 		love.graphics.setFont(introFont)
-		love.graphics.print("GAME PAUSED", love.graphics.getWidth() / 2 - introFont:getWidth("GAME PAUSED") / 2, love.graphics.getHeight() / 2 - introFont:getHeight() - 2)
+		love.graphics.print("GAME PAUSED", gameFunctions.getWidth() / 2 - introFont:getWidth("GAME PAUSED") / 2, gameFunctions.getHeight() / 2 - introFont:getHeight())
+	end
+
+	love.graphics.setColor(255, 255, 255, 255)
+
+	for k, v in pairs(consoles) do
+		v:draw()
+	end
+
+	if roomSign then
+		roomSign:draw()
 	end
 end
 
