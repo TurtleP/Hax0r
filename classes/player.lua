@@ -183,7 +183,7 @@ function player:update(dt)
 	end
 
 	if not self.hopping and not self.dodging then
-		if not love.keyboard.isDown(controls["jump"]) and self.speedy < 0 then
+		if self.falling and self.speedy < 0 then
 			if self.speedy < self.minJumpHeight then
 				self.speedy = self.minJumpHeight
 			end
@@ -214,7 +214,7 @@ function player:update(dt)
 		self.shouldAnimate = true
 	end
 
-	if self.x > 400 then
+	if self.x >= 400 then
 		mapFadeOut = true
 	end
 
@@ -335,7 +335,7 @@ function player:jump(shortHop)
 		return
 	end
 
-	if self.jumping == false and not shortHop then
+	if (not self.jumping or not self.falling) and not shortHop then
 		self.speedy = -160
 
 		jumpsound:play()
@@ -356,6 +356,10 @@ function player:jump(shortHop)
 			self.hopping = true
 		end
 	end
+end
+
+function player:stopJump()
+	self.falling = true
 end
 
 function player:downCollide(name, data)
@@ -446,6 +450,7 @@ function player:downCollide(name, data)
 	end
 
 	self.jumping = false
+	self.falling = false
 	self.canDodge = true
 	self.hopping = false
 end

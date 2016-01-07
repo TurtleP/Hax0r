@@ -15,7 +15,9 @@ function newAnalog(Ax, Ay, Ar, Br, Bd)
 	analog.releasePos = 0
 	analog.releaseTimer = 0
 	analog.releaseSpeed = .2
-	
+	analog.areaColor = {255, 255, 255, 150}
+	analog.stickColor = {42, 42, 42, 240}
+
 	function analog:getAngle(cx, cy, x, y)
 		local a = math.atan2(y-cy, x-cx)
 		a = -a
@@ -82,28 +84,26 @@ function newAnalog(Ax, Ay, Ar, Br, Bd)
 	function analog:draw()
 		--self screen
 		local t = self
-		love.graphics.setColor(255, 255, 255, 155)
-		love.graphics.circle("line", t.cx, t.cy, t.size, 32)
-		love.graphics.circle("line", t.cx, t.cy, t.deadzone*t.size, 32)
-		
-		love.graphics.stencil( function() self:pokedStencil(t.cx, t.cy, t.deadzone*t.size, t.size, 32) end)
-		love.graphics.setColor(255, 255, 255, 255)
-		love.graphics.draw(self.gradientImage, t.cx-t.size, t.cy-t.size)
-		love.graphics.setStencilTest()
+		love.graphics.setColor(self.areaColor)
+		love.graphics.circle("line", t.cx, t.cy, t.deadzone*t.size, 64)
+		love.graphics.circle("fill", t.cx, t.cy, t.deadzone*t.size, 64)
 		
 		local ax, ay = t.cx + math.cos(t.angle)*t.d*t.size, t.cy - math.sin(t.angle)*t.d*t.size
 		love.graphics.stencil( function() love.graphics.circle("fill", ax, ay, t.button, 32) end, "invert" )
 		local l = love.graphics.getLineWidth()
 		love.graphics.setLineWidth(12)
-		love.graphics.setColor({42, 42, 42, 240})
+		love.graphics.setColor(self.stickColor)
 		love.graphics.line(ax, ay, t.cx, t.cy)
 		love.graphics.circle("fill", t.cx, t.cy, 12/2, 32)
 		love.graphics.setLineWidth(l)
 		love.graphics.setStencilTest()
 		
-		love.graphics.setColor({42, 42, 42, 240})
+		--stick
+		love.graphics.setColor(self.stickColor)
 		love.graphics.circle("fill", ax, ay, t.button, 32)
-		love.graphics.setColor(255, 255, 255, 255)
+
+		--sick outer-ring
+		love.graphics.setColor(self.areaColor)
 		love.graphics.circle("line", ax, ay, t.button, 32)
 	end
 
@@ -124,13 +124,13 @@ function newAnalog(Ax, Ay, Ar, Br, Bd)
 	function analog:touchPressed(id, x, y, pressure)
 		local d = self:distance(x, y, self.cx + math.cos(self.angle)*self.d*self.size, self.cy - math.sin(self.angle)*self.d*self.size)
 		if d <= self.button then
-			self.held = id + 1
+			self.held = id
 			self:touchMoved(id, x, y, pressure)
 		end
 	end
 
 	function analog:touchReleased(id, x, y, pressure)
-		if self.held == id + 1 then
+		if self.held == id then
 			self.held = false
 			self.releaseTimer = self.releaseSpeed
 			self.releasePos = self.d
@@ -141,7 +141,7 @@ function newAnalog(Ax, Ay, Ar, Br, Bd)
 	--Yee
 
 	function analog:touchMoved(id, x, y, pressure)
-		if self.held == id + 1 then
+		if self.held == id then
 			local d = self:distance(x, y, self.cx, self.cy)
 			self.d = math.min(1, d/self.size)
 			self.angle = self:getAngle(self.cx, self.cy, x, y)

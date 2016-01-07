@@ -36,3 +36,7 @@ end
 function gameover_keypressed(key)
 	gameFunctions.changeState("title")
 end
+
+function gameover_mousepressed(x, y, button)
+	gameFunctions.changeState("title")
+end

@@ -75,13 +75,18 @@ function love.load()
 
 	UIIcons =
 	{
-		["battery"] = {love.graphics.newImage("graphics/3ds/battery.png"), love.graphics.newImage("graphics/3ds/charging.png")},
+		["battery"] = love.graphics.newImage("graphics/interface/battery.png"),
 		["health"] = {["img"] = love.graphics.newImage("graphics/interface/health.png"), ["quads"] = {}},
 		["power"] = love.graphics.newImage("graphics/interface/power.png")
 	}
 
 	for k = 1, 4 do
 		UIIcons["health"]["quads"][k] = love.graphics.newQuad((k - 1) * 18, 0, 16, 16, UIIcons["health"]["img"]:getWidth(), 16)
+	end
+
+	batteryquads = {}
+	for k = 1, 3 do
+		batteryquads[k] = love.graphics.newQuad((k - 1) * 24, 0, 23, 14, UIIcons["battery"]:getWidth(), UIIcons["battery"]:getHeight())
 	end
 
 	playerimg = love.graphics.newImage("graphics/player-new.png")
@@ -171,25 +176,14 @@ function love.load()
 	end
 
 	computerimg = love.graphics.newImage("graphics/computericon.png")
-
-	appsicon = love.graphics.newImage("graphics/ds.png")
+	quitimg = love.graphics.newImage("graphics/quit.png")
 
 	bannerimg = love.graphics.newImage("graphics/lovepotionbanner.png")
 
 	gameoverimg = love.graphics.newImage("graphics/gameover.png")
 	introimg = love.graphics.newImage("graphics/intro.png")
 
-	saveimg = love.graphics.newImage("graphics/savebar.png")
-
 	hax0r = love.graphics.newImage("graphics/hax0r.png")
-
-	bufferimg = love.graphics.newImage("graphics/buffer.png")
-	bufferquads = {}
-	for y = 1, 2 do
-		for x = 1, 12 do
-			table.insert(bufferquads, love.graphics.newQuad((x - 1) * 40, (y - 1) * 40, 40, 40, bufferimg:getWidth(), bufferimg:getHeight()))
-		end
-	end
 
 	cmdimg = love.graphics.newImage("enemies/powercmd.png")
 	cmdquads = {}
@@ -201,11 +195,43 @@ function love.load()
 
 	hitpointimg = love.graphics.newImage("graphics/hitpoint.png")
 
+	local mobileDevices =
+	{
+		["Android"] = true,
+		["Windows App"] = true,
+		["iOS"] = true
+	}
+	
+	missingX, missingY = 0, 0
+	
+	if love.system.getOS() ~= "Android" then
+		changeScale(2)
+	else
+		desktopWidth, desktopHeight = love.graphics.getDimensions( )
+
+		mobileMode = true
+
+		scale = math.floor(math.max(desktopWidth / 400, desktopHeight / 240))
+
+		missingY = ( desktopHeight / 2 - (240 * scale) / 2 ) 
+		missingX = ( desktopWidth / 2 - (400 * scale) / 2 )
+
+		require 'android/touchcontrol'
+		
+		touchControls = touchcontrol:new()
+
+		--error("Missing: " .. missingX .. "x" .. missingY .. " Scale: " .. scale)
+	end
+
 	--maps
 	mapScripts = {}
 	for k = 1, 9 do
 		local f = love.filesystem.read("maps/scripts/" .. k .. ".txt")
 		mapScripts[k] = f
+	end
+
+	if not mobileMode then
+		mapScripts[1] = love.filesystem.read("maps/scripts/1PC.txt")
 	end
 
 	--audio
@@ -241,40 +267,54 @@ function love.load()
 		hurtsnd[k] = love.audio.newSource("audio/hurt" .. k .. ".ogg")
 	end
 
-	local mobileDevices =
-	{
-		["Android"] = true,
-		["Windows App"] = true,
-		["iOS"] = true
-	}
-	
-	scale = 2
-	--if not mobileDevices[love.system.getOS()] then
-		changeScale(scale)
-	--else
-	--	changeScale()
-		mobileMode = true
-
-		require 'android/touchcontrol'
-		
-		touchControls = touchcontrol:new()
-	--end
-
 	gameFunctions.changeState("intro")
 end
 
 function love.update(dt)
-	dt = math.min(1/60, dt)
+	dt = math.min(1 / 60, dt)
 	if _G[state .. "_update"] then
 		_G[state .. "_update"](dt)
 	end
 end
 
 function love.draw()
+	love.graphics.push()
+
+	
+	love.graphics.setColor(0, 0, 0)
+
+	love.graphics.rectangle("fill", 0, 0, missingX, love.graphics.getHeight())
+	love.graphics.rectangle("fill", love.graphics.getWidth() - missingX, 0, missingX, love.graphics.getHeight())
+	love.graphics.rectangle("fill", 0, missingY, love.graphics.getWidth(), missingY)
+	love.graphics.rectangle("fill", 0, love.graphics.getHeight() - missingY, love.graphics.getWidth(), missingY)
+	
+	love.graphics.setColor(255, 255, 255)
+
+	love.graphics.translate(missingX, missingY)
+	love.graphics.setScissor(missingX, missingY, gameFunctions.getWidth() * scale, gameFunctions.getHeight() * scale)
+
 	love.graphics.scale(scale, scale)
 
 	if _G[state .. "_draw"] then
 		_G[state .. "_draw"]()
+	end
+
+	love.graphics.setScissor()
+
+	love.graphics.pop()
+
+	if analogStick then
+		if state ~= "game" then
+			return
+		end
+
+		analogStick:draw()
+
+		love.graphics.setColor(255, 255, 255, 255)
+
+		for k, v in ipairs(touchControls.buttons) do
+			v:draw()
+		end
 	end
 end
 
@@ -294,9 +334,9 @@ function love.mousepressed(x, y, button)
 	if button == 1 then
 		button = "l"
 	end
-	
+
 	if _G[state .. "_mousepressed"] then
-		_G[state .. "_mousepressed"](x, y, button)
+		_G[state .. "_mousepressed"](x - missingX, y - missingY, button)
 	end
 end
 
@@ -306,7 +346,7 @@ function love.mousereleased(x, y, button)
 	end
 
 	if _G[state .. "_mousereleased"] then
-		_G[state .. "_mousereleased"](x, y, button)
+		_G[state .. "_mousereleased"](x - missingX, y - missingY, button)
 	end
 end
 

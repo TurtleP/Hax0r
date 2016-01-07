@@ -62,7 +62,7 @@ function console:draw()
 	love.graphics.setColor(unpack(self.stringColor))
 	
 	love.graphics.setColor(255, 255, 255, 255)
-	love.graphics.print("> " .. self.drawstring, (self.x + 2) , self.y)
+	love.graphics.print("> " .. self.drawstring, (self.x + 2) , self.y + (self.height / 2) - consoleFont:getHeight() / 2)
 
 	if self.i == #self.string then
 		love.graphics.setColor(self.stringColor[1], self.stringColor[2], self.stringColor[3], 255 * self.fade)

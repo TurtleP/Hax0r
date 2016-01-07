@@ -208,7 +208,7 @@ function game_draw()
 	--INTERFACE
 
 	--if homebrewMode then
-	local batteryimg = UIIcons["battery"][1]
+	local batteryimg = UIIcons["battery"]
 
 	local batteryLeft = _PLAYERLIVES
 
@@ -224,12 +224,7 @@ function game_draw()
 	end
 
 	love.graphics.setColor(unpack(batteryColor))
-	love.graphics.draw(batteryimg, 2, gameFunctions.getHeight() - batteryimg:getHeight() - 1)
-
-	love.graphics.setColor(unpack(percentColor))
-	for k = 1, batteryLeft do
-		love.graphics.rectangle("fill", 5 + (k - 1) * 5, (gameFunctions.getHeight() - batteryimg:getHeight() - 1) + 2, 4, 10)
-	end
+	love.graphics.draw(batteryimg, batteryquads[batteryLeft], 2, gameFunctions.getHeight() - batteryimg:getHeight() - 1)
 
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.print(os.date("%I:%M %p"), gameFunctions.getWidth() - consoleFont:getWidth(os.date("%I:%M %p")) - 2, gameFunctions.getHeight() - consoleFont:getHeight(os.date("%I:%M %p")))
@@ -276,6 +271,7 @@ function game_draw()
 
 		love.graphics.setFont(introFont)
 		love.graphics.print("GAME PAUSED", gameFunctions.getWidth() / 2 - introFont:getWidth("GAME PAUSED") / 2, gameFunctions.getHeight() / 2 - introFont:getHeight())
+		love.graphics.setFont(consoleFont)
 	end
 
 	love.graphics.setColor(255, 255, 255, 255)
@@ -327,7 +323,7 @@ function game_keypressed(key)
 end
 
 function game_mousepressed(x, y, button)
-	if x > gameFunctions.getWidth() - 18 and x < (gameFunctions.getWidth() - 18) + 16 and y > 1 and y < 18 then
+	if aabb(x / scale, y / scale, 8, 8, gameFunctions.getWidth() - 18, 0, 18, 18) then
 		paused = not paused
 	end
 end
@@ -345,6 +341,8 @@ function game_keyreleased(key)
 		objects["player"][1]:moveup(false)
 	elseif key == controls["down"] then
 		objects["player"][1]:movedown(false)
+	elseif key == controls["jump"] then
+		objects["player"][1]:stopJump()
 	end
 end
 

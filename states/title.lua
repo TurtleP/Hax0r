@@ -7,8 +7,7 @@ function title_init()
 	{
 		function() gameFunctions.changeState("game") end,
 		function() gameFunctions.changeState("credits") end, 
-		--{"Quit", love.event.quit}, 
-		function() end
+		function() love.event.quit() end
 	}
 	
 	love.graphics.setBackgroundColor(0, 128, 128)
@@ -22,6 +21,7 @@ function title_init()
 	{
 		createIcon(16, 16, "Web 95", "web", titleStrings[1]),
 		createIcon(16, 88, "My PC", "computer", titleStrings[2]),
+		createIcon(16, 160, "Log Off", "quit", titleStrings[3])
 	}
 
 	if noData then
@@ -138,7 +138,7 @@ function createIcon(x, y, text, i, func)
 	elseif i == "computer" then
 		icon.graphic = computerimg
 	else
-		icon.graphic = love.graphics.newImage("graphics/documenticon.png")
+		icon.graphic = love.graphics.newImage("graphics/quit.png")
 	end
 	
 	icon.text = text or ""

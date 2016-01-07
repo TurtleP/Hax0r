@@ -1,7 +1,7 @@
 levelequals=2
 freezeplayer=
 wait=2
-console=Damnit. These files are going to interfere.
+console=Dammit. These files are going to interfere.
 wait=6
 console=The goal here is to infect the whole machine, but..
 wait=5
