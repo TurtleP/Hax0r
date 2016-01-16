@@ -269,10 +269,9 @@ function love.load()
 	hitpointimg = love.graphics.newImage("graphics/hitpoint.png")
 
 	--maps
-	local myDirectory = "sdmc:/3ds/Hax0r/game/maps/scripts"
+	local myDirectory = "maps/scripts"
 	local open = io.open
 	if not homebrewMode then
-		myDirectory = "maps/scripts"
 		open = love.filesystem.read
 	end
 
