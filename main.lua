@@ -43,12 +43,9 @@ require 'enemies/core'
 
 	You're welcome Jeviny.
 --]]
-function love.graphics.setScreen() end
 
 function love.load()
 	controls = {}
-
-	homebrewMode = true
 
 	love.graphics.setDefaultFilter("nearest", "nearest")
 
@@ -203,7 +200,7 @@ function love.load()
 	}
 	
 	missingX, missingY = 0, 0
-	
+	--2560 x 1440 
 	if love.system.getOS() ~= "Android" then
 		changeScale(2)
 	else
@@ -213,14 +210,13 @@ function love.load()
 
 		scale = math.floor(math.max(desktopWidth / 400, desktopHeight / 240))
 
-		missingY = ( desktopHeight / 2 - (240 * scale) / 2 ) 
-		missingX = ( desktopWidth / 2 - (400 * scale) / 2 )
+		missingY = ( (desktopHeight) / 2 - ( 240 * scale) / 2 )
+		missingX = ( (desktopWidth) / 2 - (400 * scale) / 2 )
 
+		--error("Width: " .. desktopWidth .. " Height: " .. desktopHeight .. " Scale: " .. scale .. ": " .. (400 * scale) .. "x" .. (240 * scale))
 		require 'android/touchcontrol'
 		
 		touchControls = touchcontrol:new()
-
-		--error("Missing: " .. missingX .. "x" .. missingY .. " Scale: " .. scale)
 	end
 
 	--maps
@@ -278,9 +274,6 @@ function love.update(dt)
 end
 
 function love.draw()
-	love.graphics.push()
-
-	
 	love.graphics.setColor(0, 0, 0)
 
 	love.graphics.rectangle("fill", 0, 0, missingX, love.graphics.getHeight())
@@ -290,18 +283,21 @@ function love.draw()
 	
 	love.graphics.setColor(255, 255, 255)
 
-	love.graphics.translate(missingX, missingY)
 	love.graphics.setScissor(missingX, missingY, gameFunctions.getWidth() * scale, gameFunctions.getHeight() * scale)
 
+	love.graphics.push()
+
+	love.graphics.translate(missingX, missingY)
+	
 	love.graphics.scale(scale, scale)
 
 	if _G[state .. "_draw"] then
 		_G[state .. "_draw"]()
 	end
 
-	love.graphics.setScissor()
-
 	love.graphics.pop()
+
+	love.graphics.setScissor()
 
 	if analogStick then
 		if state ~= "game" then

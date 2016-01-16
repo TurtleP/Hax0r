@@ -344,10 +344,12 @@ function player:jump(shortHop)
 	elseif self.jumping == "left" then
 		self.speedy = -120
 		self.speedx = 120
+		self.falling = false
 		self.jumping = true
 	elseif self.jumping == "right" then
 		self.speedy = -120
 		self.speedx = -120
+		self.falling = false
 		self.jumping = true
 	else
 		if shortHop then

@@ -24,7 +24,7 @@ function eventsystem:update(dt)
 			elseif v.cmd == "wait" then
 				self.sleep = v.args
 			elseif v.cmd == "spawnplayer" then
-				objects["player"][1] = player:new(playerX, playerY, true)
+				objects["player"][1] = player:new(_PLAYERSPAWNX, _PLAYERSPAWNY)
 			elseif v.cmd == "firewallfree" then
 				if objects["firewall"][1] then
 					objects["firewall"][1]:fade()
