@@ -202,7 +202,7 @@ function love.load()
 	missingX, missingY = 0, 0
 	--2560 x 1440 
 	if love.system.getOS() ~= "Android" then
-		changeScale(2)
+		changeScale(1)
 	else
 		desktopWidth, desktopHeight = love.graphics.getDimensions( )
 
