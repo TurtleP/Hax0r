@@ -74,10 +74,6 @@ function eventsystem:decrypt(scriptString)
 	for k, v in pairs(split) do
 		local thingy = v:split("=")
 		
-		if thingy[2] then
-			thingy[2] = thingy[2]:sub(1, #thingy[2] - 1)
-		end
-
 		table.insert(cmd, {thingy[1], thingy[2]})
 	end
 

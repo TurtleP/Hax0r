@@ -31,12 +31,6 @@ function cmd:init(x, y)
 
 	self.name = "PowerCMD"
 
-	local song = midbossSong
-
-	if not song then
-		midbossSong = love.audio.newSource("audio/midboss.wav")
-	end
-
 	self.song = midbossSong
 
 	self.health = 4
@@ -229,6 +223,9 @@ function cmd:die()
 	self.remove = true
 
 	midbossSong = nil
+
+	collectgarbage()
+	collectgarbage()
 
 	game_Explode(self, nil, {0, 0, 0})
 end

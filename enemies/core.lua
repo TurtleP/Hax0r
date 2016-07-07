@@ -46,12 +46,8 @@ function core:init(x, y)
 
 	titlemusic:stop()
 
-	local song = endBossSong
-
-	if not endBossSong then
-		endBossSong = love.audio.newSource("audio/boss.wav")
-	end
-
+	endBossSong = love.audio.newSource("audio/boss.ogg")
+	
 	self.song = endBossSong
 
 	self.attacks = {"dive", "shootcircle", "shoot", "pound", "none"}
@@ -284,6 +280,9 @@ function core:die()
 	self.song:stop()
 
 	endBossSong = nil
+
+	collectgarbage()
+	collectgarbage()
 
 	game_Explode(self, nil, {0, 0, 0})
 

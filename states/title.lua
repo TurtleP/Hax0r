@@ -1,8 +1,6 @@
 function title_init()
 	_PLAYERLIVES = 3
 	
-	
-	
 	titleStrings = 
 	{
 		function() gameFunctions.changeState("game") end,
@@ -37,7 +35,11 @@ function title_init()
 	titleMouseX, titleMouseY = nil, nil
 
 	backgroundi = 1
-	backgroundtimer =0
+	backgroundtimer = 0
+
+	if not midbossSong then
+		midbossSong = love.audio.newSource("audio/midboss.ogg")
+	end
 end
 
 function title_update(dt)

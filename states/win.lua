@@ -20,6 +20,11 @@ function win_init()
 	}
 
 	hax0rfade = 0
+
+	endBossSong = nil
+
+	collectgarbage()
+	collectgarbage()
 end
 
 function newTimer(t, f)
